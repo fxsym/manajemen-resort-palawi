@@ -25,7 +25,8 @@ class DatabaseSeeder extends Seeder
             ResortSeeder::class,
             RoomSeeder::class,
             OrderSeeder::class,
-            OrderRoomSeeder::class
+            OrderRoomSeeder::class,
+            OrderResortSeeder::class
         ]);
     }
 }

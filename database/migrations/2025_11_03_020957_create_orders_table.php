@@ -20,7 +20,6 @@ return new class extends Migration
             $table->text('address');
             $table->string('phone_number', '15');
             $table->foreignId('user_id')->constrained();
-            $table->foreignId('resort_id')->constrained();
             $table->unsignedInteger('rooms_count');
             $table->unsignedBigInteger('price');
             $table->unsignedInteger('days_count');

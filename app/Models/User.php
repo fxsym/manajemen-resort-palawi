@@ -4,7 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -20,8 +20,12 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'phone',
+        'username',
         'email',
         'password',
+        'role',
+        'image_url'
     ];
 
     /**
@@ -48,12 +52,14 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the order that owns the User
+     * Get all of the orders for the User
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function order(): BelongsTo
+    public function orders(): HasMany
     {
-        return $this->belongsTo(User::class);
+        return $this->hasMany(Order::class);
     }
+
+    
 }
