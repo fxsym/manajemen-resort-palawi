@@ -1,20 +1,22 @@
-import { useState } from "react";
-import Navbar from "../components/layouts/Navbar";
-import Navmenu from "../components/layouts/Navmenu";
+import CardDashboard from "../components/ui/CardDashboard";
+import { FaBed, FaDollarSign } from "react-icons/fa";
+import { MdOutlineHotel } from "react-icons/md";
+import MainLayout from "../components/layouts/MainLayout";
 
-export default function Dashboard({ user }) {
-    const [showSidebar, setShowSidebar] = useState(false)
-
+export default function Dashboard({ roomsBookedThisMonth, revenueThisMonth, availableRooms, recentOrders }) {
     return (
-        <section className="flex">
-            <Navmenu isOpen={showSidebar} onClose={() => setShowSidebar(false)} />
+        <MainLayout>
+            <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
 
-            <div className="w-full transition-all duration-500">
-                <Navbar name={user.name} image_url={user.image_url} showSidebar={showSidebar} setShowSidebar={setShowSidebar} />
-                <div className="p-6">
-                    <h1 className="text-3xl font-bold">Dashboard</h1>
-                </div>
+            <div className="flex flex-col md:flex-row gap-4 w-full justify-around">
+                <CardDashboard title={"Total kamar di booking bulan ini"} info={roomsBookedThisMonth} Icon={FaBed} />
+                <CardDashboard title={"Pendapatan bulan ini"} info={revenueThisMonth} Icon={FaDollarSign} />
+                <CardDashboard title={"Kamar tersedia di seluruh resort"} info={availableRooms} Icon={MdOutlineHotel} />
             </div>
-        </section>
+
+            <div>
+
+            </div>
+        </MainLayout>
     )
 }
