@@ -27,11 +27,11 @@ export default function Navmenu({ isOpen, onClose }) {
 
           {/* Menu Items */}
           <div className="flex flex-col gap-4 p-6 text-lg font-semibold">
-            <Link className="flex items-center gap-3 cursor-pointer hover:text-primary transition-colors">
+            <Link href='/dashboard' className="flex items-center gap-3 cursor-pointer hover:text-primary transition-colors">
               <TbLayoutDashboard size={24} />
               <p>Beranda</p>
             </Link>
-            <Link className="flex items-center gap-3 cursor-pointer hover:text-primary transition-colors">
+            <Link href='/resorts' className="flex items-center gap-3 cursor-pointer hover:text-primary transition-colors">
               <FaHotel size={24} />
               <p>Resort</p>
             </Link>
