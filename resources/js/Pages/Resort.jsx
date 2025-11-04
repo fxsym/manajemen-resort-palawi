@@ -1,12 +1,6 @@
-import { useEffect } from "react";
 import MainLayout from "../components/layouts/MainLayout";
 
 export default function Resort({ resort }) {
-
-    useEffect(() => {
-        console.log(resort)
-    }, [])
-
     return (
         <MainLayout>
             <h1 className="text-3xl font-bold mb-4">{resort.name}</h1>

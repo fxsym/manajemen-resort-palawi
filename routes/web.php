@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ResortController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,3 +18,5 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('aut
 
 Route::get('/resorts', [ResortController::class, 'index'])->middleware('auth');
 Route::get('/resorts/{id}', [ResortController::class, 'show'])->middleware('auth');
+
+Route::get('/orders/create', [OrderController::class, 'create'])->middleware('auth');
