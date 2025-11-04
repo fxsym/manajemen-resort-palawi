@@ -41,7 +41,11 @@ class ResortController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $resort = Resort::with('rooms')->findOrFail($id);
+        return Inertia::render('Resort', [
+            'resort' => $resort,
+            'message' => 'Data resorts berhasil di dapatkan'
+        ]);
     }
 
     /**

@@ -1,6 +1,8 @@
-export default function CardResort({ name, image_url }) {
+import { Link } from "@inertiajs/react";
+
+export default function CardResort({id, name, image_url }) {
   return (
-    <div className="relative w-full max-w-sm h-96 rounded-xl overflow-hidden shadow-lg group cursor-pointer">
+    <Link href={`/resorts/${id}`} className="relative w-full max-w-sm h-96 rounded-xl overflow-hidden shadow-lg group cursor-pointer">
       {/* Layer gradient */}
       <div className="absolute inset-x-0 bottom-0 h-[50%] w-full z-10 bg-gradient-to-t from-black/90 to-transparent opacity-100 group-hover:opacity-10 transition-opacity duration-500"></div>
 
@@ -17,6 +19,6 @@ export default function CardResort({ name, image_url }) {
           {name}
         </h3>
       </div>
-    </div>
+    </Link>
   );
 }
