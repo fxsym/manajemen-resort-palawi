@@ -22,7 +22,7 @@ class UserSeeder extends Seeder
                 'email' => 'fsyamsudin24@gmail.com',
                 'password' => Hash::make('fxsym31'),
                 'role' => 'admin',
-                'image_url' => 'https://res.cloudinary.com/djfxfwzin/image/upload/v1759995034/Fatih_Syamsudin_qshr46.jpg',
+                'image_url' => 'https://res.cloudinary.com/djfxfwzin/image/upload/v1760583289/Users/20251016_025446_fatih-syamsudin.jpg',
             ],
         ]);
     }

@@ -15,13 +15,16 @@ class ResortSeeder extends Seeder
     {
         DB::table('resorts')->insert([
             [
-                'name' => 'Eboni',
+                'name' => 'Ebony',
+                'image_url' => 'https://res.cloudinary.com/djfxfwzin/image/upload/v1762224275/eboniImage_imemfs.jpg'
             ],
             [
                 'name' => 'Acacia',
+                'image_url' => 'https://res.cloudinary.com/djfxfwzin/image/upload/v1762224274/acaciaImage_chaypn.jpg',
             ],
             [
                 'name' => 'Agathis',
+                'image_url' => 'https://res.cloudinary.com/djfxfwzin/image/upload/v1762224274/agathisImage_r3bnlz.jpg',
             ],
         ]);
     }
