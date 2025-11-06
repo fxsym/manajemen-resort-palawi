@@ -11,7 +11,7 @@ export default function Dashboard({ roomsBookedThisMonth, revenueThisMonth, avai
             <div className="flex flex-col md:flex-row gap-4 w-full justify-around">
                 <CardDashboard title={"Total kamar di booking bulan ini"} info={roomsBookedThisMonth} Icon={FaBed} />
                 <CardDashboard title={"Pendapatan bulan ini"} info={revenueThisMonth} Icon={FaDollarSign} />
-                <CardDashboard title={"Kamar tersedia di seluruh resort"} info={availableRooms} Icon={MdOutlineHotel} />
+                <CardDashboard title={"Kamar tersedia hari ini"} info={availableRooms?.length} Icon={MdOutlineHotel} />
             </div>
 
             <div>

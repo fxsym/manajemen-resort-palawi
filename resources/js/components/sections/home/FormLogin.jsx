@@ -33,7 +33,7 @@ export default function FormLogin() {
             )}
 
             <input
-                type="text"
+                type="password"
                 value={data.password}
                 placeholder="Masukan password"
                 className="md:w-120 border-primary border-2 p-2 rounded-xl"

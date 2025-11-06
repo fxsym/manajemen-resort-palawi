@@ -2,7 +2,7 @@ import { Link } from "@inertiajs/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaHotel } from "react-icons/fa";
 import { IoClose } from "react-icons/io5";
-import { MdOutlineLibraryBooks } from "react-icons/md";
+import { MdOutlineLibraryBooks, MdRoomService } from "react-icons/md";
 import { TbLayoutDashboard } from "react-icons/tb";
 
 export default function Navmenu({ isOpen, onClose }) {
@@ -39,6 +39,10 @@ export default function Navmenu({ isOpen, onClose }) {
             <Link href='/orders/create' className="flex items-center gap-3 cursor-pointer hover:text-primary transition-colors">
               <MdOutlineLibraryBooks size={24} />
               <p>Booking Resort</p>
+            </Link>
+            <Link href='/check-availability' className="flex items-center gap-3 cursor-pointer hover:text-primary transition-colors">
+              <MdRoomService size={24} />
+              <p>Cek Ketersediaan Kamar</p>
             </Link>
           </div>
         </motion.div>

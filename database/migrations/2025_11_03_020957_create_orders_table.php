@@ -22,9 +22,17 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained();
             $table->unsignedInteger('rooms_count');
             $table->unsignedBigInteger('price');
-            $table->unsignedInteger('days_count');
+            $table->unsignedBigInteger('days_count');
             $table->dateTime('check_in')->nullable();
             $table->dateTime('check_out')->nullable();
+            $table->enum('status', [
+                'pending',
+                'confirmed',
+                'checked_in',
+                'checked_out',
+                'cancelled',
+                'expired',
+            ])->default('pending');
             $table->timestamps();
         });
     }

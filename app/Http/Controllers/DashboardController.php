@@ -7,6 +7,7 @@ use App\Models\Room;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -37,10 +38,22 @@ class DashboardController extends Controller
         return $revenue;
     }
 
-    public function getAvailableRooms()
+    public function getAvailableRoomsToday()
     {
-        $availableRooms = Room::where('status', 'available')->count();
+        $today = Carbon::today();
 
+        // Ambil semua room_id yang sedang dipesan hari ini
+        $bookedRoomIds = DB::table('order_room')
+            ->join('orders', 'order_room.order_id', '=', 'orders.id')
+            ->whereIn('orders.status', ['pending', 'confirmed', 'checked_in']) // status aktif
+            ->whereDate('orders.check_in', '<=', $today)
+            ->whereDate('orders.check_out', '>', $today)
+            ->pluck('order_room.room_id')
+            ->toArray();
+
+        // Ambil kamar yang tidak termasuk dalam bookedRoomIds
+        $availableRooms = Room::whereNotIn('id', $bookedRoomIds)->get();
+        
         return $availableRooms;
     }
 
@@ -56,7 +69,7 @@ class DashboardController extends Controller
             'user' => Auth::user(),
             'roomsBookedThisMonth' =>  $this->getRoomsBookedThisMonth(),
             'revenueThisMonth' => $this->getRevenueThisMonth(),
-            'availableRooms' => $this->getAvailableRooms(),
+            'availableRooms' => $this->getAvailableRoomsToday(),
             'recentOrders' => $this->getRecentOrders(),
         ]);
     }

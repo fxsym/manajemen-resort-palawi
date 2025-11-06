@@ -14,47 +14,17 @@ class OrderResortSeeder extends Seeder
     public function run(): void
     {
         DB::table('order_resort')->insert([
-            // Order 1 (Budi) — Eboni dan Acacia
-            [
-                'order_id' => 1,
-                'resort_id' => 1,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'order_id' => 1,
-                'resort_id' => 2,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-
-            // Order 2 (Siti) — Acacia dan Agathis
-            [
-                'order_id' => 2,
-                'resort_id' => 2,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'order_id' => 2,
-                'resort_id' => 3,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-
-            // Order 3 (Andi) — Agathis dan Eboni
-            [
-                'order_id' => 3,
-                'resort_id' => 3,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'order_id' => 3,
-                'resort_id' => 1,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+            ['order_id' => 1, 'resort_id' => 2],
+            ['order_id' => 2, 'resort_id' => 1],
+            ['order_id' => 2, 'resort_id' => 3],
+            ['order_id' => 3, 'resort_id' => 1],
+            ['order_id' => 3, 'resort_id' => 3],
+            ['order_id' => 4, 'resort_id' => 1],
+            ['order_id' => 4, 'resort_id' => 2],
+            ['order_id' => 5, 'resort_id' => 1],
+            ['order_id' => 6, 'resort_id' => 1],
+            ['order_id' => 7, 'resort_id' => 1],
+            ['order_id' => 8, 'resort_id' => 2],
         ]);
     }
 }

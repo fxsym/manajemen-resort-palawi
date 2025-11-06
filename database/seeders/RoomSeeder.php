@@ -13,47 +13,36 @@ class RoomSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('rooms')->insert([
-            [
-                'name' => 'EA1',
-                'status' => 'available',
-                'resort_id' => '1',
-            ],
-            [
-                'name' => 'EA2',
-                'status' => 'available',
-                'resort_id' => '1',
-            ],
-            [
-                'name' => 'AC1',
-                'status' => 'available',
-                'resort_id' => '2',
-            ],
-            [
-                'name' => 'AC2',
-                'status' => 'available',
-                'resort_id' => '2',
-            ],
-            [
-                'name' => 'AC3',
-                'status' => 'available',
-                'resort_id' => '2',
-            ],
-            [
-                'name' => 'AC4',
-                'status' => 'available',
-                'resort_id' => '2',
-            ],
-            [
-                'name' => 'AG1',
-                'status' => 'available',
-                'resort_id' => '3',
-            ],
-            [
-                'name' => 'AG2',
-                'status' => 'available',
-                'resort_id' => '3',
-            ],
-        ]);
+        // EA1 - EA8
+        for ($i = 1; $i <= 8; $i++) {
+            DB::table('rooms')->insert([
+                'name' => 'EA' . $i,
+                'resort_id' => 1,
+            ]);
+        }
+
+        // EB1 - EB8
+        for ($i = 1; $i <= 8; $i++) {
+            DB::table('rooms')->insert([
+                'name' => 'EB' . $i,
+                'resort_id' => 1,
+            ]);
+        }
+
+        // AC1 - AC4
+        for ($i = 1; $i <= 4; $i++) {
+            DB::table('rooms')->insert([
+                'name' => 'AC' . $i,
+                'resort_id' => 2,
+            ]);
+        }
+
+        // AC1 - AC6 (resort 3)
+        for ($i = 1; $i <= 6; $i++) {
+            DB::table('rooms')->insert([
+                'name' => 'AC' . $i,
+                'resort_id' => 3,
+            ]);
+        }
     }
 }
