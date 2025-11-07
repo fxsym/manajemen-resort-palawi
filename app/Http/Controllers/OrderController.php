@@ -96,7 +96,6 @@ class OrderController extends Controller
             'participants_count' => 'required|integer|min:1',
             'address' => 'required|string',
             'phone_number' => 'required|string|max:15',
-            'rooms_count' => 'required|integer|min:1',
             'price' => 'required|numeric|min:0',
             'check_in' => 'required|date|after_or_equal:today',
             'check_out' => 'required|date|after:check_in',
@@ -110,20 +109,7 @@ class OrderController extends Controller
         $checkIn = Carbon::parse($validated['check_in']);
         $checkOut = Carbon::parse($validated['check_out']);
         $daysCount = max(1, $checkOut->diffInDays($checkIn)); // minimal 1 hari
-
-
-        // 🚫 Pastikan semua kamar yang dipilih masih available
-        $bookedRooms = DB::table('rooms')
-            ->whereIn('id', $validated['chooseRooms'])
-            ->where('status', 'booked')
-            ->pluck('id')
-            ->toArray();
-
-        if (!empty($bookedRooms)) {
-            return back()->withErrors([
-                'chooseRooms' => 'Beberapa kamar sudah dibooking: ' . implode(', ', $bookedRooms),
-            ]);
-        }
+        $roomsCount = count($validated['chooseRooms']);
 
         DB::beginTransaction();
         try {
@@ -136,7 +122,7 @@ class OrderController extends Controller
                 'address' => $validated['address'],
                 'phone_number' => $validated['phone_number'],
                 'user_id' => Auth::id(),
-                'rooms_count' => $validated['rooms_count'],
+                'rooms_count' => $roomsCount,
                 'price' => $validated['price'],
                 'days_count' => $daysCount,
                 'check_in' => $validated['check_in'],
@@ -159,8 +145,6 @@ class OrderController extends Controller
                     'order_id' => $orderId,
                     'room_id' => $roomId,
                 ]);
-
-                DB::table('rooms')->where('id', $roomId)->update(['status' => 'booked']);
             }
 
             DB::commit();

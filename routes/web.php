@@ -26,5 +26,5 @@ Route::post('/orders', [OrderController::class, 'store'])->middleware('auth');
 Route::get('/check-availability', [RoomController::class, 'showCheckAvailability'])->name('availability.show')->middleware('auth');
 Route::post('/check-availability', [RoomController::class, 'checkAvailability'])->name('availability.check')->middleware('auth');
 
-Route::post('/check-availability-order', [OrderController::class, 'checkAvailability'])->middleware('auth');
+Route::post('/orders/create', [OrderController::class, 'checkAvailability'])->middleware('auth');
 

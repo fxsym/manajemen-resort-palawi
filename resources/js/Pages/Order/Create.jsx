@@ -19,15 +19,38 @@ export default function Create({ resorts }) {
         chooseRooms: []
     });
 
-    const [availableRooms, setAvailableRooms] = useState([]);
     const [choosedResorts, setChoosedResorts] = useState([])
     const [loadingAvailability, setLoadingAvailability] = useState(false);
     const [nullDate, setNullDate] = useState()
 
-    const [selectedResorts, setSelectedResorts] = useState([]);
-
     const handleSubmit = (e) => {
+        e.preventDefault();
+        clearErrors();
 
+        console.log(data)
+        // Validasi manual sebelum submit
+        let hasError = false;
+
+        if (data.chooseResorts.length === 0) {
+            setError("chooseResorts", "Silakan pilih minimal 1 resort terlebih dahulu.");
+            hasError = true;
+        }
+
+        if (data.chooseRooms.length === 0) {
+            setError("chooseRooms", "Silakan pilih minimal 1 kamar terlebih dahulu.");
+            hasError = true;
+        }
+
+        if (hasError) return;
+
+        post("/orders", {
+            onError: (err) => {
+                console.log("❌ Error validasi:", err);
+            },
+            onSuccess: () => {
+                console.log("✅ Booking berhasil!");
+            },
+        });
     };
 
     const handleCheckAvailability = () => {
@@ -39,7 +62,7 @@ export default function Create({ resorts }) {
         setLoadingAvailability(true)
 
         router.post(
-            "/check-availability-order",
+            "/orders/create",
             {
                 check_in: data.check_in,
                 check_out: data.check_in,
@@ -47,10 +70,8 @@ export default function Create({ resorts }) {
             },
             {
                 onSuccess: (page) => {
-                    const available = page.props.availableRooms || [];
                     const choosedResorts = page.props.choosedResorts || [];
                     console.log(choosedResorts)
-                    setAvailableRooms(available);
                     setChoosedResorts(choosedResorts)
                     setLoadingAvailability(false);
                 },
@@ -73,7 +94,7 @@ export default function Create({ resorts }) {
                     onSubmit={handleSubmit}
                     className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8 rounded-2xl backdrop-blur-sm shadow-2xl text-primary w-full max-w-5xl bg-white/70"
                 >
-                    {/* Kolom Kanan */}
+
                     <div className="flex items-center justify-center gap-5 col-span-2">
                         {[
                             { id: "check_in", label: "Tanggal Check-In", type: "date" },
@@ -187,8 +208,106 @@ export default function Create({ resorts }) {
                                     )}
                                 </div>
                             ))}
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8 rounded-2xl backdrop-blur-sm shadow-2xl text-primary w-full max-w-5xl bg-white/70">
+                                {/* Kolom Kiri */}
+                                <div className="flex flex-col gap-5">
+                                    {[
+                                        { id: "name", label: "Nama Pemesan", type: "text" },
+                                        { id: "phone_number", label: "Nomor Telepon", type: "text" },
+                                        { id: "institution", label: "Institusi Pemesan", type: "text" },
+                                        { id: "position", label: "Jabatan Pemesan", type: "text" },
+                                    ].map(({ id, label, type }) => (
+                                        <div key={id}>
+                                            <label htmlFor={id} className="font-medium">{label}</label>
+                                            <input
+                                                id={id}
+                                                type={type}
+                                                value={data[id]}
+                                                onChange={e => setData(id, e.target.value)}
+                                                className="w-full border-primary border-2 p-2 rounded-xl"
+                                            />
+                                            {errors[id] && <p className="text-red-500 text-sm">{errors[id]}</p>}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Kolom Kanan */}
+                                <div className="grid grid-rows-3 gap-5">
+                                    {[
+                                        { id: "address", label: "Alamat", type: "textarea" },
+                                        { id: "participants_count", label: "Jumlah Peserta", type: "number" },
+                                        { id: "price", label: "Harga", type: "number" },
+                                    ].map(({ id, label, type }) => (
+                                        <div
+                                            key={id}
+                                            className={type === "textarea" ? "row-span-2" : ""}
+                                        >
+                                            <label htmlFor={id} className="font-medium">{label}</label>
+                                            {type === "textarea" ? (
+                                                <textarea
+                                                    id={id}
+                                                    rows={4}
+                                                    value={data[id]}
+                                                    onChange={e => setData(id, e.target.value)}
+                                                    className="w-full border-primary border-2 p-2 rounded-xl resize-none"
+                                                />
+                                            ) : (
+                                                <input
+                                                    id={id}
+                                                    type={type}
+                                                    value={data[id]}
+                                                    onChange={e => setData(id, e.target.value)}
+                                                    className="w-full border-primary border-2 p-2 rounded-xl"
+                                                />
+                                            )}
+                                            {errors[id] && <p className="text-red-500 text-sm">{errors[id]}</p>}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="md:col-span-2 flex justify-center mt-4">
+                                    <button
+                                        type="submit"
+                                        disabled={processing}
+                                        className={`bg-primary text-white font-medium py-3 px-8 rounded-lg 
+                                hover:bg-primary/80 focus:ring-2 focus:ring-primary focus:ring-offset-2 
+                                transition-colors shadow-sm flex items-center gap-2`}
+                                    >
+                                        {processing ? (
+                                            <>
+                                                <svg
+                                                    className="animate-spin h-5 w-5 text-white"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <circle
+                                                        className="opacity-25"
+                                                        cx="12"
+                                                        cy="12"
+                                                        r="10"
+                                                        stroke="currentColor"
+                                                        strokeWidth="4"
+                                                    ></circle>
+                                                    <path
+                                                        className="opacity-75"
+                                                        fill="currentColor"
+                                                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                                    ></path>
+                                                </svg>
+                                                Memproses...
+                                            </>
+                                        ) : (
+                                            "Buat Booking"
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
                         </div>
                     )}
+
 
 
                 </form>
