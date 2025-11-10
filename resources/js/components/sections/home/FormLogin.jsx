@@ -24,8 +24,8 @@ export default function FormLogin() {
             <input
                 type="text"
                 value={data.userInput}
-                placeholder="Masukan username/email"
-                className="md:w-120 border-primary border-2 p-2 rounded-xl"
+                placeholder="Masukan Username/Email"
+                className="md:w-120 border-white border-2 p-2 rounded-xl text-white placeholder:text-white/70"
                 onChange={e => setData("userInput", e.target.value)}
             />
             {errors.userInput && (
@@ -35,21 +35,21 @@ export default function FormLogin() {
             <input
                 type="password"
                 value={data.password}
-                placeholder="Masukan password"
-                className="md:w-120 border-primary border-2 p-2 rounded-xl"
+                placeholder="Masukan Password"
+                className="md:w-120 border-white border-2 p-2 rounded-xl text-white placeholder:text-white/70"
                 onChange={e => setData("password", e.target.value)}
             />
             {errors.password && (
                 <div className="text-red-500 text-sm">{errors.password}</div>
             )}
 
-            <label className="flex items-center space-x-2 text-sm">
+            <label className="flex items-center space-x-2 text-sm text-white">
                 <input
                     type="checkbox"
                     checked={data.remember}
                     onChange={(e) => setData("remember", e.target.checked)}
                 />
-                <span>Ingat saya</span>
+                <span>Ingat Saya</span>
             </label>
 
             {errors.message && (
