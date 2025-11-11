@@ -86,11 +86,21 @@ export default function Create({ resorts }) {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12">
         <div className="max-w-6xl mx-auto px-4">
 
-          {/* ✅ Notifikasi Sukses Besar di Tengah */}
+        {/* ✅ Notifikasi Sukses yang Menarik */}
           {successMessage && (
-            <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-              <div className="bg-green-500 text-white font-bold text-3xl px-16 py-10 rounded-3xl shadow-2xl border-4 border-green-300 animate-fade-in-down text-center">
-                {successMessage}
+            <div className="fixed inset-0 flex items-center justify-center z-50 px-4">
+              <div className="bg-white rounded-2xl shadow-2xl border-2 border-green-500 p-6 max-w-md w-full animate-scale-in">
+                <div className="flex items-center gap-4">
+                  <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center animate-bounce-slow">
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-bold text-xl text-gray-800">Berhasil!</p>
+                    <p className="text-gray-600 text-sm mt-1">{successMessage}</p>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -355,15 +365,35 @@ export default function Create({ resorts }) {
         </div>
       </div>
 
-      {/* ✨ Animasi CSS untuk notifikasi */}
+{/* ✨ Animasi CSS untuk notifikasi */}
       <style>
         {`
-          @keyframes fadeInDown {
-            0% { opacity: 0; transform: translateY(-30px); }
-            100% { opacity: 1; transform: translateY(0); }
+          @keyframes scaleIn {
+            0% { 
+              opacity: 0; 
+              transform: scale(0.8);
+            }
+            100% { 
+              opacity: 1; 
+              transform: scale(1);
+            }
           }
-          .animate-fade-in-down {
-            animation: fadeInDown 0.6s ease-out;
+          
+          @keyframes bounceSlow {
+            0%, 100% { 
+              transform: translateY(0);
+            }
+            50% { 
+              transform: translateY(-5px);
+            }
+          }
+          
+          .animate-scale-in {
+            animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+          }
+          
+          .animate-bounce-slow {
+            animation: bounceSlow 1.5s ease-in-out infinite;
           }
         `}
       </style>
