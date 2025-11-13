@@ -24,6 +24,15 @@ class UserSeeder extends Seeder
                 'role' => 'admin',
                 'image_url' => 'https://res.cloudinary.com/djfxfwzin/image/upload/v1760583289/Users/20251016_025446_fatih-syamsudin.jpg',
             ],
+            [
+                'name' => 'admin',
+                'phone' => '08123456789',
+                'username' => 'admin',
+                'email' => 'admin@gmail.com',
+                'password' => Hash::make('admin'),
+                'role' => 'admin',
+                'image_url' => 'https://res.cloudinary.com/djfxfwzin/image/upload/v1760583289/Users/20251016_025446_fatih-syamsudin.jpg',
+            ],
         ]);
     }
 }

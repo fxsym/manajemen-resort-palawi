@@ -27,16 +27,17 @@ class DashboardController extends Controller
         return $totalRoomsBooked;
     }
 
-    public function getRevenueThisMonth()
-    {
-        $startOfMonth = Carbon::now()->startOfMonth();
-        $endOfMonth = Carbon::now()->endOfMonth();
+public function getRevenueThisMonth()
+{
+    $startOfMonth = Carbon::now()->startOfMonth();
+    $endOfMonth = Carbon::now()->endOfMonth();
 
-        $revenue = Order::whereBetween('check_in', [$startOfMonth, $endOfMonth])
-            ->sum('price');
+    $revenue = Order::whereBetween('check_in', [$startOfMonth, $endOfMonth])
+        ->sum('price');
 
-        return $revenue;
-    }
+    // Format ke Rupiah
+    return 'Rp ' . number_format($revenue, 0, ',', '.');
+}
 
     public function getAvailableRoomsToday()
     {
