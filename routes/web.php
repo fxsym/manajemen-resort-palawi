@@ -28,3 +28,4 @@ Route::post('/check-availability', [RoomController::class, 'checkAvailability'])
 
 Route::post('/orders/create', [OrderController::class, 'checkAvailability'])->middleware('auth');
 
+Route::get('/room/{id}', [RoomController::class, 'show'])->name('room.show');

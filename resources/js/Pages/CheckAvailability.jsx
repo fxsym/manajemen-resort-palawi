@@ -53,6 +53,12 @@ export default function CheckAvailability({ resorts }) {
     return diffDays;
   };
 
+  const handleRoomClick = (room, available) => {
+    if (available) {
+      router.visit(`/room/${room.id}`);
+    }
+  };
+
   const nights = calculateNights();
 
   return (
@@ -302,10 +308,11 @@ export default function CheckAvailability({ resorts }) {
                         return (
                           <div
                             key={room.id}
-                            className={`relative p-6 rounded-xl shadow-md transform transition-all hover:scale-105 ${
+                            onClick={() => handleRoomClick(room, available)}
+                            className={`relative p-6 rounded-xl shadow-md transform transition-all ${
                               available
-                                ? "bg-gradient-to-br from-green-500 to-emerald-600 text-white"
-                                : "bg-gradient-to-br from-red-400 to-red-900 text-white "
+                                ? "bg-gradient-to-br from-green-500 to-emerald-700 text-white cursor-pointer hover:scale-105"
+                                : "bg-gradient-to-br from-red-600 to-red-900 text-white cursor-not-allowed opacity-75"
                             }`}
                           >
                             {/* Status Badge */}
@@ -363,6 +370,13 @@ export default function CheckAvailability({ resorts }) {
                             <p className="text-sm font-semibold">
                               {available ? "Tersedia" : "Tidak Tersedia"}
                             </p>
+
+                            {/* Click indicator for available rooms */}
+                            {available && (
+                              <div className="mt-2 text-xs opacity-90">
+                                Klik untuk detail →
+                              </div>
+                            )}
                           </div>
                         );
                       })}

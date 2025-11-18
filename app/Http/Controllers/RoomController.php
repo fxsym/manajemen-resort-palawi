@@ -18,6 +18,14 @@ class RoomController extends Controller
             'availableRooms' => []
         ]);
     }
+    public function show(string $id)
+{
+    $room = Room::with('resort')->findOrFail($id);
+    return Inertia::render('RoomDetail', [
+        'room' => $room,
+        'message' => 'Data kamar berhasil didapatkan'
+    ]);
+}
 
     public function checkAvailability(Request $request)
     {
