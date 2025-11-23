@@ -27,11 +27,11 @@ return new class extends Migration
             $table->dateTime('check_out')->nullable();
             $table->enum('status', [
                 'pending',
-                'confirmed',
+                'reserved',
                 'checked_in',
                 'checked_out',
                 'cancelled',
-                'expired',
+                'completed',
             ])->default('pending');
             $table->timestamps();
         });

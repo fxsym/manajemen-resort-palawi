@@ -32,9 +32,57 @@ class OrderController extends Controller
         ]);
     }
 
+    // public function checkAvailability(Request $request)
+    // {
+    //     // 1️⃣ Validasi input
+    //     $validated = $request->validate([
+    //         'check_in' => 'required|date',
+    //         'check_out' => 'required|date|after_or_equal:check_in',
+    //         'resort_ids' => 'required|array|min:1',
+    //     ]);
+
+    //     $checkIn = $validated['check_in'];
+    //     $checkOut = $validated['check_out'];
+    //     $resortIds = $validated['resort_ids'];
+
+    //     // 2️⃣ Ambil semua resort sesuai ID
+
+
+    //     // 3️⃣ Ambil semua room dari resort terpilih
+    //     $allRooms = Room::whereIn('resort_id', $resortIds)->get();
+
+    //     // 4️⃣ Cari room_id yang sedang digunakan di rentang waktu tsb
+    //     $occupiedRoomIds = DB::table('order_room')
+    //         ->join('orders', 'order_room.order_id', '=', 'orders.id')
+    //         ->whereIn('orders.status', ['pending', 'confirmed', 'checked_in'])
+    //         ->where(function ($query) use ($checkIn, $checkOut) {
+    //             $query->whereDate('orders.check_in', '<=', $checkOut)
+    //                 ->whereDate('orders.check_out', '>=', $checkIn);
+    //         })
+    //         ->pluck('order_room.room_id')
+    //         ->toArray();
+
+    //     // 5️⃣ Filter room yang tidak sedang digunakan
+    //     $availableRooms = $allRooms->whereNotIn('id', $occupiedRoomIds)->values();
+
+    //     $availableRoomIds = $availableRooms->pluck('id');
+    //     $choosedResorts = Resort::with(['rooms' => function ($query) use ($availableRoomIds) {
+    //         $query->whereIn('id', $availableRoomIds);
+    //     }])->whereIn('id', $resortIds)->get();
+
+    //     $resorts = Resort::with('rooms')->get();
+
+    //     // 6️⃣ Return ke Inertia
+    //     return Inertia::render('Order/Create', [
+    //         'resorts' => $resorts,
+    //         'choosedResorts' => $choosedResorts,
+    //         'availableRooms' => $availableRooms,
+    //     ]);
+    // }
+
     public function checkAvailability(Request $request)
     {
-        // 1️⃣ Validasi input
+        // 1️⃣ Validasi input 
         $validated = $request->validate([
             'check_in' => 'required|date',
             'check_out' => 'required|date|after_or_equal:check_in',
@@ -45,38 +93,76 @@ class OrderController extends Controller
         $checkOut = $validated['check_out'];
         $resortIds = $validated['resort_ids'];
 
-        // 2️⃣ Ambil semua resort sesuai ID
-
-
-        // 3️⃣ Ambil semua room dari resort terpilih
+        // 2️⃣ Ambil semua room dari resort terpilih 
         $allRooms = Room::whereIn('resort_id', $resortIds)->get();
 
-        // 4️⃣ Cari room_id yang sedang digunakan di rentang waktu tsb
-        $occupiedRoomIds = DB::table('order_room')
+        // 3️⃣ Cari room dengan status MERAH (reserved, checked_in) - TIDAK TERSEDIA
+        $unavailableRoomIds = DB::table('order_room')
             ->join('orders', 'order_room.order_id', '=', 'orders.id')
-            ->whereIn('orders.status', ['pending', 'confirmed', 'checked_in'])
+            ->whereIn('orders.status', ['reserved', 'checked_in'])
             ->where(function ($query) use ($checkIn, $checkOut) {
                 $query->whereDate('orders.check_in', '<=', $checkOut)
                     ->whereDate('orders.check_out', '>=', $checkIn);
             })
             ->pluck('order_room.room_id')
+            ->unique()
             ->toArray();
 
-        // 5️⃣ Filter room yang tidak sedang digunakan
-        $availableRooms = $allRooms->whereNotIn('id', $occupiedRoomIds)->values();
+        // 4️⃣ Cari room dengan status KUNING (pending) - MENUNGGU KONFIRMASI
+        $pendingRoomIds = DB::table('order_room')
+            ->join('orders', 'order_room.order_id', '=', 'orders.id')
+            ->where('orders.status', 'pending')
+            ->where(function ($query) use ($checkIn, $checkOut) {
+                $query->whereDate('orders.check_in', '<=', $checkOut)
+                    ->whereDate('orders.check_out', '>=', $checkIn);
+            })
+            ->pluck('order_room.room_id')
+            ->unique()
+            ->toArray();
 
-        $availableRoomIds = $availableRooms->pluck('id');
-        $choosedResorts = Resort::with(['rooms' => function ($query) use ($availableRoomIds) {
-            $query->whereIn('id', $availableRoomIds);
+        // 5️⃣ Filter room yang benar-benar tersedia (HIJAU)
+        // Room yang tidak ada di unavailable dan tidak ada di pending
+        $availableRoomIds = $allRooms
+            ->whereNotIn('id', $unavailableRoomIds)
+            ->whereNotIn('id', $pendingRoomIds)
+            ->pluck('id')
+            ->toArray();
+
+        // 6️⃣ Kategorikan semua room berdasarkan status
+        $categorizedRooms = $allRooms->map(function ($room) use ($unavailableRoomIds, $pendingRoomIds, $availableRoomIds) {
+            if (in_array($room->id, $unavailableRoomIds)) {
+                $room->availability_status = 'unavailable'; // MERAH
+            } elseif (in_array($room->id, $pendingRoomIds)) {
+                $room->availability_status = 'pending'; // KUNING
+            } else {
+                $room->availability_status = 'available'; // HIJAU
+            }
+            return $room;
+        });
+
+        // 7️⃣ Kelompokkan rooms berdasarkan resort dengan status availability
+        $choosedResorts = Resort::with(['rooms' => function ($query) use ($resortIds) {
+            $query->whereIn('resort_id', $resortIds);
         }])->whereIn('id', $resortIds)->get();
+
+        // Tambahkan availability_status ke setiap room di choosedResorts
+        $choosedResorts = $choosedResorts->map(function ($resort) use ($categorizedRooms) {
+            $resort->rooms = $resort->rooms->map(function ($room) use ($categorizedRooms) {
+                $categorized = $categorizedRooms->firstWhere('id', $room->id);
+                if ($categorized) {
+                    $room->availability_status = $categorized->availability_status;
+                }
+                return $room;
+            });
+            return $resort;
+        });
 
         $resorts = Resort::with('rooms')->get();
 
-        // 6️⃣ Return ke Inertia
+        // 8️⃣ Return ke Inertia 
         return Inertia::render('Order/Create', [
             'resorts' => $resorts,
             'choosedResorts' => $choosedResorts,
-            'availableRooms' => $availableRooms,
         ]);
     }
 

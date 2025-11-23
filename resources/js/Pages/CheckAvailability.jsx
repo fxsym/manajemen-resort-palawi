@@ -8,6 +8,73 @@ export default function CheckAvailability({ resorts }) {
   const [availableRooms, setAvailableRooms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [resortsWithStatus, setResortsWithStatus] = useState([]);
+
+  // Fungsi untuk mendapatkan styling berdasarkan status
+  const getRoomStatusStyle = (status) => {
+    switch (status) {
+      case 'available': // HIJAU - Tersedia
+        return "bg-gradient-to-br from-green-500 to-emerald-700 text-white cursor-pointer hover:scale-105";
+      case 'pending': // KUNING - Menunggu Konfirmasi
+        return "bg-gradient-to-br from-yellow-400 to-yellow-600 text-white cursor-not-allowed opacity-80";
+      case 'unavailable': // MERAH - Tidak Tersedia
+        return "bg-gradient-to-br from-red-600 to-red-900 text-white cursor-not-allowed opacity-75";
+      default:
+        return "bg-gradient-to-br from-gray-400 to-gray-600 text-white";
+    }
+  };
+
+  // Fungsi untuk mendapatkan icon status
+  const getRoomStatusIcon = (status) => {
+    switch (status) {
+      case 'available':
+        return (
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fillRule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+              clipRule="evenodd"
+            />
+          </svg>
+        );
+      case 'pending':
+        return (
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fillRule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+              clipRule="evenodd"
+            />
+          </svg>
+        );
+      case 'unavailable':
+        return (
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fillRule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clipRule="evenodd"
+            />
+          </svg>
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Fungsi untuk mendapatkan text status
+  const getRoomStatusText = (status) => {
+    switch (status) {
+      case 'available':
+        return 'Tersedia';
+      case 'pending':
+        return 'Menunggu Konfirmasi';
+      case 'unavailable':
+        return 'Tidak Tersedia';
+      default:
+        return 'Unknown';
+    }
+  };
 
   const handleCheckAvailability = (e) => {
     e.preventDefault();
@@ -28,8 +95,13 @@ export default function CheckAvailability({ resorts }) {
       {
         onSuccess: (page) => {
           const available = page.props.availableRooms || [];
-          console.log(available);
+          const resortsData = page.props.resorts || [];
+          
+          console.log("Available Rooms:", available);
+          console.log("Resorts with Status:", resortsData);
+          
           setAvailableRooms(available);
+          setResortsWithStatus(resortsData);
           setLoading(false);
         },
         onError: (error) => {
@@ -53,13 +125,23 @@ export default function CheckAvailability({ resorts }) {
     return diffDays;
   };
 
-  const handleRoomClick = (room, available) => {
-    if (available) {
+  const handleRoomClick = (room, status) => {
+    if (status === 'available') {
       router.visit(`/room/${room.id}`);
     }
   };
 
+  // Hitung statistik untuk setiap resort
+  const getResortStats = (rooms) => {
+    const available = rooms.filter(r => r.availability_status === 'available').length;
+    const pending = rooms.filter(r => r.availability_status === 'pending').length;
+    const unavailable = rooms.filter(r => r.availability_status === 'unavailable').length;
+    
+    return { available, pending, unavailable, total: rooms.length };
+  };
+
   const nights = calculateNights();
+  const displayResorts = hasSearched ? resortsWithStatus : resorts;
 
   return (
     <MainLayout>
@@ -247,22 +329,66 @@ export default function CheckAvailability({ resorts }) {
             </div>
           )}
 
+          {/* Legend Keterangan Warna - Tampil setelah search */}
+          {!loading && hasSearched && (
+            <div className="bg-white rounded-xl shadow-md p-6 mb-8 border border-gray-200">
+              <h4 className="font-semibold text-gray-700 mb-4 text-lg">
+                Keterangan Status Kamar:
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-700 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-green-800">Tersedia</p>
+                    <p className="text-sm text-green-600">Dapat dipesan & diklik untuk detail</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-yellow-800">Menunggu Konfirmasi</p>
+                    <p className="text-sm text-yellow-600">Status: Pending</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg border border-red-200">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-red-900 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-red-800">Tidak Tersedia</p>
+                    <p className="text-sm text-red-600">Reserved atau Checked-In</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Results Section */}
-          {!loading && hasSearched && availableRooms.length > 0 && (
+          {!loading && hasSearched && displayResorts.length > 0 && (
             <div className="space-y-8">
               <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold text-gray-800 mb-2">
                   Hasil Ketersediaan Kamar
                 </h2>
                 <p className="text-gray-600">
-                  Menampilkan {availableRooms.length} kamar yang tersedia
+                  Menampilkan status dari {displayResorts.reduce((sum, r) => sum + r.rooms.length, 0)} kamar
                 </p>
               </div>
 
-              {resorts.map((resort, idx) => {
-                const availableCount = resort.rooms.filter((room) =>
-                  isRoomAvailable(room.id)
-                ).length;
+              {displayResorts.map((resort, idx) => {
+                const stats = getResortStats(resort.rooms);
 
                 return (
                   <div
@@ -273,30 +399,46 @@ export default function CheckAvailability({ resorts }) {
                     }}
                   >
                     {/* Resort Header */}
-                    <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
-                      <div>
-                        <h3 className="text-2xl font-bold text-gray-800 mb-1">
+                    <div className="mb-6 pb-4 border-b border-gray-200">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-2xl font-bold text-gray-800">
                           {resort.name}
                         </h3>
-                        <p className="text-gray-500">
-                          {availableCount} dari {resort.rooms.length} kamar
-                          tersedia
-                        </p>
+                        <div className="text-right">
+                          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 px-4 py-2 rounded-full font-semibold text-sm">
+                            <svg
+                              className="w-4 h-4"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            {stats.available} Tersedia
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <div className="inline-flex items-center gap-2 bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 px-4 py-2 rounded-full font-semibold text-sm">
-                          <svg
-                            className="w-4 h-4"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                          {Math.round((availableCount / resort.rooms.length) * 100)}%
+                      
+                      {/* Statistics Bar */}
+                      <div className="grid grid-cols-4 gap-3">
+                        <div className="text-center p-3 bg-gray-50 rounded-lg">
+                          <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
+                          <p className="text-xs text-gray-600">Total Kamar</p>
+                        </div>
+                        <div className="text-center p-3 bg-green-50 rounded-lg border border-green-200">
+                          <p className="text-2xl font-bold text-green-700">{stats.available}</p>
+                          <p className="text-xs text-green-600">Tersedia</p>
+                        </div>
+                        <div className="text-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                          <p className="text-2xl font-bold text-yellow-700">{stats.pending}</p>
+                          <p className="text-xs text-yellow-600">Pending</p>
+                        </div>
+                        <div className="text-center p-3 bg-red-50 rounded-lg border border-red-200">
+                          <p className="text-2xl font-bold text-red-700">{stats.unavailable}</p>
+                          <p className="text-xs text-red-600">Tidak Tersedia</p>
                         </div>
                       </div>
                     </div>
@@ -304,44 +446,18 @@ export default function CheckAvailability({ resorts }) {
                     {/* Room Cards */}
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {resort.rooms.map((room) => {
-                        const available = isRoomAvailable(room.id);
+                        const status = room.availability_status || 'available';
+                        const isClickable = status === 'available';
+                        
                         return (
                           <div
                             key={room.id}
-                            onClick={() => handleRoomClick(room, available)}
-                            className={`relative p-6 rounded-xl shadow-md transform transition-all ${
-                              available
-                                ? "bg-gradient-to-br from-green-500 to-emerald-700 text-white cursor-pointer hover:scale-105"
-                                : "bg-gradient-to-br from-red-600 to-red-900 text-white cursor-not-allowed opacity-75"
-                            }`}
+                            onClick={() => handleRoomClick(room, status)}
+                            className={`relative p-6 rounded-xl shadow-md transform transition-all ${getRoomStatusStyle(status)}`}
                           >
                             {/* Status Badge */}
                             <div className="absolute top-2 right-2">
-                              {available ? (
-                                <svg
-                                  className="w-6 h-6"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                              ) : (
-                                <svg
-                                  className="w-6 h-6"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                              )}
+                              {getRoomStatusIcon(status)}
                             </div>
 
                             {/* Room Icon */}
@@ -368,11 +484,11 @@ export default function CheckAvailability({ resorts }) {
 
                             {/* Status Text */}
                             <p className="text-sm font-semibold">
-                              {available ? "Tersedia" : "Tidak Tersedia"}
+                              {getRoomStatusText(status)}
                             </p>
 
                             {/* Click indicator for available rooms */}
-                            {available && (
+                            {isClickable && (
                               <div className="mt-2 text-xs opacity-90">
                                 Klik untuk detail →
                               </div>
@@ -388,7 +504,7 @@ export default function CheckAvailability({ resorts }) {
           )}
 
           {/* No Results */}
-          {!loading && hasSearched && availableRooms.length === 0 && (
+          {!loading && hasSearched && availableRooms.length === 0 && resortsWithStatus.length === 0 && (
             <div className="text-center py-16">
               <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-red-100 to-orange-100 rounded-full mb-6">
                 <svg
@@ -406,17 +522,17 @@ export default function CheckAvailability({ resorts }) {
                 </svg>
               </div>
               <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                Tidak Ada Kamar Tersedia
+                Tidak Ada Kamar Ditemukan
               </h3>
               <p className="text-gray-600 max-w-md mx-auto mb-6">
-                Maaf, tidak ada kamar yang tersedia untuk tanggal yang Anda
-                pilih. Coba pilih tanggal lain.
+                Silakan coba lagi dengan tanggal yang berbeda.
               </p>
               <button
                 onClick={() => {
                   setCheckIn("");
                   setCheckOut("");
                   setHasSearched(false);
+                  setResortsWithStatus([]);
                 }}
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold px-6 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all shadow-lg"
               >

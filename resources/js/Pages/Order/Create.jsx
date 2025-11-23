@@ -25,6 +25,43 @@ export default function Create({ resorts }) {
   const [nullDate, setNullDate] = useState();
   const [successMessage, setSuccessMessage] = useState("");
 
+  // Fungsi untuk mendapatkan styling berdasarkan status
+  const getRoomStatusStyle = (status, isSelected) => {
+    if (isSelected) {
+      return "bg-blue-600 text-white border-blue-700 scale-105";
+    }
+
+    switch (status) {
+      case 'available': // HIJAU - Tersedia
+        return "bg-green-100 text-green-800 border-green-400 hover:bg-green-200";
+      case 'pending': // KUNING - Menunggu Konfirmasi
+        return "bg-yellow-100 text-yellow-800 border-yellow-400 hover:bg-yellow-200 cursor-not-allowed opacity-75";
+      case 'unavailable': // MERAH - Tidak Tersedia
+        return "bg-red-100 text-red-800 border-red-400 cursor-not-allowed opacity-60";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-300";
+    }
+  };
+
+  // Fungsi untuk mendapatkan label status
+  const getRoomStatusLabel = (status) => {
+    switch (status) {
+      case 'available':
+        return '✓ Tersedia';
+      case 'pending':
+        return '⏳ Pesan Belum DP';
+      case 'unavailable':
+        return '✕ Tidak Tersedia';
+      default:
+        return '';
+    }
+  };
+
+  // Fungsi untuk mengecek apakah room bisa dipilih
+  const isRoomSelectable = (status) => {
+    return status === 'available';
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     clearErrors();
@@ -86,7 +123,7 @@ export default function Create({ resorts }) {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12">
         <div className="max-w-6xl mx-auto px-4">
 
-        {/* ✅ Notifikasi Sukses yang Menarik */}
+          {/* ✅ Notifikasi Sukses */}
           {successMessage && (
             <div className="fixed inset-0 flex items-center justify-center z-50 px-4">
               <div className="bg-white rounded-2xl shadow-2xl border-2 border-green-500 p-6 max-w-md w-full animate-scale-in">
@@ -218,6 +255,25 @@ export default function Create({ resorts }) {
             {/* Hasil Resort & Form Pemesan */}
             {choosedResorts.length > 0 && (
               <div className="space-y-10">
+                {/* Legend Keterangan Warna */}
+                <div className="bg-white rounded-xl shadow-md p-4 border border-gray-200">
+                  <h4 className="font-semibold text-gray-700 mb-3">Keterangan Status Kamar:</h4>
+                  <div className="flex flex-wrap gap-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded bg-green-400"></div>
+                      <span className="text-sm text-gray-700">Tersedia (dapat dipesan)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded bg-yellow-400"></div>
+                      <span className="text-sm text-gray-700">Menunggu Konfirmasi (pending)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded bg-red-400"></div>
+                      <span className="text-sm text-gray-700">Tidak Tersedia (reserved/checked_in)</span>
+                    </div>
+                  </div>
+                </div>
+
                 {choosedResorts.map(({ id: resortId, name, rooms }) => (
                   <div
                     key={resortId}
@@ -229,43 +285,53 @@ export default function Create({ resorts }) {
 
                     {rooms.length > 0 ? (
                       <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {rooms.map(({ id: roomId, name: roomName }) => (
-                          <label
-                            key={roomId}
-                            htmlFor={`room-${roomId}`}
-                            className={`p-4 rounded-xl text-center cursor-pointer font-semibold shadow-md border-2 transition-all ${
-                              data.chooseRooms.includes(roomId)
-                                ? "bg-green-500 text-white border-green-600 scale-105"
-                                : "bg-white text-gray-700 border-gray-300 hover:bg-green-50"
-                            }`}
-                          >
-                            <input
-                              id={`room-${roomId}`}
-                              type="checkbox"
-                              value={roomId}
-                              checked={data.chooseRooms.includes(roomId)}
-                              onChange={(e) => {
-                                const value = parseInt(e.target.value);
-                                if (e.target.checked) {
-                                  setData("chooseRooms", [
-                                    ...data.chooseRooms,
-                                    value,
-                                  ]);
-                                } else {
-                                  setData(
-                                    "chooseRooms",
-                                    data.chooseRooms.filter(
-                                      (rid) => rid !== value
-                                    )
-                                  );
-                                }
-                                clearErrors("chooseRooms");
-                              }}
-                              className="hidden"
-                            />
-                            {roomName}
-                          </label>
-                        ))}
+                        {rooms.map(({ id: roomId, name: roomName, availability_status }) => {
+                          const selectable = isRoomSelectable(availability_status);
+                          const isSelected = data.chooseRooms.includes(roomId);
+                          
+                          return (
+                            <label
+                              key={roomId}
+                              htmlFor={selectable ? `room-${roomId}` : undefined}
+                              className={`p-4 rounded-xl text-center font-semibold shadow-md border-2 transition-all ${
+                                getRoomStatusStyle(availability_status, isSelected)
+                              } ${selectable ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                              title={!selectable ? 'Kamar ini tidak tersedia' : 'Klik untuk memilih'}
+                            >
+                              <input
+                                id={`room-${roomId}`}
+                                type="checkbox"
+                                value={roomId}
+                                checked={isSelected}
+                                disabled={!selectable}
+                                onChange={(e) => {
+                                  if (!selectable) return;
+                                  
+                                  const value = parseInt(e.target.value);
+                                  if (e.target.checked) {
+                                    setData("chooseRooms", [
+                                      ...data.chooseRooms,
+                                      value,
+                                    ]);
+                                  } else {
+                                    setData(
+                                      "chooseRooms",
+                                      data.chooseRooms.filter(
+                                        (rid) => rid !== value
+                                      )
+                                    );
+                                  }
+                                  clearErrors("chooseRooms");
+                                }}
+                                className="hidden"
+                              />
+                              <div className="font-bold mb-1">{roomName}</div>
+                              <div className="text-xs font-medium">
+                                {getRoomStatusLabel(availability_status)}
+                              </div>
+                            </label>
+                          );
+                        })}
                       </div>
                     ) : (
                       <p className="text-gray-500 italic">
@@ -274,6 +340,13 @@ export default function Create({ resorts }) {
                     )}
                   </div>
                 ))}
+
+                {/* Error jika tidak ada kamar dipilih */}
+                {errors.chooseRooms && (
+                  <p className="text-red-500 text-center text-sm font-medium">
+                    {errors.chooseRooms}
+                  </p>
+                )}
 
                 {/* Form Data Pemesan */}
                 <div className="bg-white/90 border border-gray-200 rounded-3xl shadow-xl p-8">
@@ -365,7 +438,7 @@ export default function Create({ resorts }) {
         </div>
       </div>
 
-{/* ✨ Animasi CSS untuk notifikasi */}
+      {/* ✨ Animasi CSS */}
       <style>
         {`
           @keyframes scaleIn {
