@@ -40,7 +40,7 @@ class RoomSeeder extends Seeder
         // AC1 - AC6 (resort 3)
         for ($i = 1; $i <= 6; $i++) {
             DB::table('rooms')->insert([
-                'name' => 'AC' . $i,
+                'name' => 'AG' . $i,
                 'resort_id' => 3,
             ]);
         }
