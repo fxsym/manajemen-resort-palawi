@@ -4,9 +4,9 @@ export function getRoomStatusStyle(status) {
     case "available": // HIJAU - Tersedia
       return "bg-gradient-to-br from-green-500 to-emerald-700 text-white cursor-pointer hover:scale-105";
     case "pending": // KUNING - Menunggu Konfirmasi
-      return "bg-gradient-to-br from-yellow-400 to-yellow-600 text-white cursor-not-allowed opacity-80";
+      return "bg-gradient-to-br from-yellow-400 to-yellow-600 text-white cursor-pointer opacity-80 hover:scale-105";
     case "unavailable": // MERAH - Tidak Tersedia
-      return "bg-gradient-to-br from-red-600 to-red-900 text-white cursor-not-allowed opacity-75";
+      return "bg-gradient-to-br from-red-600 to-red-900 text-white cursor-pointer opacity-75 hover:scale-105";
     default:
       return "bg-gradient-to-br from-gray-400 to-gray-600 text-white";
   }

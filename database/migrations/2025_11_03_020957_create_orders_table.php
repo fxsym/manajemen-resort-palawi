@@ -21,10 +21,16 @@ return new class extends Migration
             $table->string('phone_number', '15');
             $table->foreignId('user_id')->constrained();
             $table->unsignedInteger('rooms_count');
-            $table->unsignedBigInteger('price');
+            $table->unsignedBigInteger('total_price');
+            $table->unsignedBigInteger('payment_amount');
             $table->unsignedBigInteger('days_count');
             $table->dateTime('check_in')->nullable();
             $table->dateTime('check_out')->nullable();
+            $table->enum('payment_status', [
+                'unpaid',
+                'down_payment',
+                'paid',
+            ])->default('unpaid');
             $table->enum('status', [
                 'pending',
                 'reserved',
