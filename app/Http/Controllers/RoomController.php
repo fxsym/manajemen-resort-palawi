@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use App\Models\Resort;
 use App\Models\Room;
 use Illuminate\Http\Request;
@@ -95,24 +96,65 @@ class RoomController extends Controller
             ->toArray();
 
         // Kategorikan room
-        $categorizedRooms = $allRooms->map(function ($room) use ($unavailableRoomIds, $pendingRoomIds) {
+        $categorizedRooms = $allRooms->map(function ($room) use ($unavailableRoomIds, $pendingRoomIds, $checkIn, $checkOut) {
+            $room->availability_status = 'available';
+            $room->order_details = []; // UBAH dari null ke array
+
             if (in_array($room->id, $unavailableRoomIds)) {
                 $room->availability_status = 'unavailable';
+
+                // AMBIL SEMUA ORDERS yang overlap, bukan hanya satu
+                $orders = Order::whereIn('status', ['reserved', 'checked_in'])
+                    ->whereHas('rooms', function ($query) use ($room) {
+                        $query->where('rooms.id', $room->id);
+                    })
+                    ->where(function ($query) use ($checkIn, $checkOut) {
+                        $query->whereBetween('check_in', [$checkIn, $checkOut])
+                            ->orWhereBetween('check_out', [$checkIn, $checkOut])
+                            ->orWhere(function ($sub) use ($checkIn, $checkOut) {
+                                $sub->where('check_in', '<=', $checkIn)
+                                    ->where('check_out', '>=', $checkOut);
+                            });
+                    })
+                    ->with('user')
+                    ->orderBy('check_in', 'asc') // Urutkan berdasarkan check_in
+                    ->get(); // UBAH dari first() ke get()
+
+                $room->order_details = $orders;
             } elseif (in_array($room->id, $pendingRoomIds)) {
                 $room->availability_status = 'pending';
-            } else {
-                $room->availability_status = 'available';
+
+                // AMBIL SEMUA ORDERS pending yang overlap
+                $orders = Order::where('status', 'pending')
+                    ->whereHas('rooms', function ($query) use ($room) {
+                        $query->where('rooms.id', $room->id);
+                    })
+                    ->where(function ($query) use ($checkIn, $checkOut) {
+                        $query->whereBetween('check_in', [$checkIn, $checkOut])
+                            ->orWhereBetween('check_out', [$checkIn, $checkOut])
+                            ->orWhere(function ($sub) use ($checkIn, $checkOut) {
+                                $sub->where('check_in', '<=', $checkIn)
+                                    ->where('check_out', '>=', $checkOut);
+                            });
+                    })
+                    ->with('user')
+                    ->orderBy('check_in', 'asc')
+                    ->get(); // UBAH dari first() ke get()
+
+                $room->order_details = $orders;
             }
+
             return $room;
         });
 
-        // Tambahkan status ke resorts
+        // Pastikan order_details ikut ter-attach ke rooms dalam resorts
         $resorts = Resort::with('rooms')->get();
         $resorts = $resorts->map(function ($resort) use ($categorizedRooms) {
             $resort->rooms = $resort->rooms->map(function ($room) use ($categorizedRooms) {
                 $categorized = $categorizedRooms->firstWhere('id', $room->id);
                 if ($categorized) {
                     $room->availability_status = $categorized->availability_status;
+                    $room->order_details = $categorized->order_details;
                 }
                 return $room;
             });
@@ -129,7 +171,7 @@ class RoomController extends Controller
 
         return Inertia::render('CheckAvailability', [
             'resorts' => $resorts,
-            'availableRooms' => $availableRooms
+            'availableRooms' => $availableRooms,
         ]);
     }
 }

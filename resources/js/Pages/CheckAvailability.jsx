@@ -8,6 +8,7 @@ import ResortHeaderCheckAvailability from "../components/ui/ResortHeaderCheckAva
 import { getRoomStatusIcon, getRoomStatusStyle, getRoomStatusText } from "../utils/checkAvailbility";
 import LegendColorCheckAvailability from "../components/ui/LegendColorCheckAvailability";
 import SearchButtonCheckAvailability from "../components/ui/SearchButtonCheckAvailability";
+import OrderDetailsModal from "../components/ui/OrderDetailsModal";
 
 export default function CheckAvailability({ resorts }) {
   const [checkIn, setCheckIn] = useState("");
@@ -16,6 +17,11 @@ export default function CheckAvailability({ resorts }) {
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [resortsWithStatus, setResortsWithStatus] = useState([]);
+
+  // TAMBAH STATE UNTUK MODAL
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedRoomName, setSelectedRoomName] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleCheckAvailability = (e) => {
     e.preventDefault();
@@ -63,13 +69,31 @@ export default function CheckAvailability({ resorts }) {
     return diffDays;
   };
 
+  // UPDATE FUNGSI handleRoomClick
   const handleRoomClick = (room, status) => {
     if (status === 'available') {
       router.visit(`/room/${room.id}`);
+    } else if (status === 'unavailable' || status === 'pending') {
+      // Tampilkan modal dengan detail orders (bisa multiple)
+      // Sebelumnya mungkin check room.order_details saja
+      // Sekarang check room.order_details dan length > 0
+      if (room.order_details && room.order_details.length > 0) {
+        setSelectedOrder(room.order_details); // Kirim array
+        setSelectedRoomName(room.name);
+        setIsModalOpen(true);
+      } else {
+        alert('Detail pemesanan tidak tersedia');
+      }
     }
   };
 
-  // Hitung statistik untuk setiap resort
+  // FUNGSI UNTUK TUTUP MODAL
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedOrder(null);
+    setSelectedRoomName("");
+  };
+
   const getResortStats = (rooms) => {
     const available = rooms.filter(r => r.availability_status === 'available').length;
     const pending = rooms.filter(r => r.availability_status === 'pending').length;
@@ -166,7 +190,7 @@ export default function CheckAvailability({ resorts }) {
 
             {/* Nights Info */}
             {nights > 0 && (
-              <NightsInfo nights={nights}/>
+              <NightsInfo nights={nights} />
             )}
           </div>
 
@@ -210,7 +234,7 @@ export default function CheckAvailability({ resorts }) {
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {resort.rooms.map((room) => {
                         const status = room.availability_status || 'available';
-                        const isClickable = status === 'available';
+                        const isClickable = status === 'available' || status === 'unavailable' || status === 'pending';
 
                         return (
                           <div
@@ -250,10 +274,10 @@ export default function CheckAvailability({ resorts }) {
                               {getRoomStatusText(status)}
                             </p>
 
-                            {/* Click indicator for available rooms */}
+                            {/* Click indicator */}
                             {isClickable && (
                               <div className="mt-2 text-xs opacity-90">
-                                Klik untuk detail →
+                                {status === 'available' ? 'Klik untuk detail →' : 'Klik untuk info pemesanan →'}
                               </div>
                             )}
                           </div>
@@ -268,10 +292,18 @@ export default function CheckAvailability({ resorts }) {
 
           {/* No Results */}
           {!loading && hasSearched && availableRooms.length === 0 && resortsWithStatus.length === 0 && (
-            <NoResultCheckAvailability setCheckIn={setCheckIn} setCheckOut={setCheckOut} setHasSearched={setHasSearched} setResortsWithStatus={setResortsWithStatus}/>
+            <NoResultCheckAvailability setCheckIn={setCheckIn} setCheckOut={setCheckOut} setHasSearched={setHasSearched} setResortsWithStatus={setResortsWithStatus} />
           )}
         </div>
       </div>
+
+      {/* TAMBAH MODAL */}
+      <OrderDetailsModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        orderDetails={selectedOrder}
+        roomName={selectedRoomName}
+      />
 
       <style>{`
         @keyframes fadeInUp {
