@@ -29,20 +29,16 @@ class RoomSeeder extends Seeder
             ]);
         }
 
-        // AC1 - AC4
-        for ($i = 1; $i <= 4; $i++) {
-            DB::table('rooms')->insert([
-                'name' => 'AC' . $i,
-                'resort_id' => 2,
-            ]);
-        }
+        // Acacia
+        DB::table('rooms')->insert([
+            'name' => 'Acacia',
+            'resort_id' => 2,
+        ]);
 
-        // AC1 - AC6 (resort 3)
-        for ($i = 1; $i <= 6; $i++) {
-            DB::table('rooms')->insert([
-                'name' => 'AG' . $i,
-                'resort_id' => 3,
-            ]);
-        }
+        // Agathis
+        DB::table('rooms')->insert([
+            'name' => 'Agathis',
+            'resort_id' => 3,
+        ]);
     }
 }
