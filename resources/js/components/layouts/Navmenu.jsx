@@ -1,5 +1,6 @@
-import { Link } from "@inertiajs/react";
+import { Link, router } from "@inertiajs/react";
 import { motion, AnimatePresence } from "framer-motion";
+import { LogOutIcon } from "lucide-react";
 import { IoClose } from "react-icons/io5";
 import { MdOutlineLibraryBooks, MdRoomService } from "react-icons/md";
 import { TbLayoutDashboard } from "react-icons/tb";
@@ -51,6 +52,15 @@ export default function Navmenu({ isOpen, onClose }) {
               <MdRoomService size={24} />
               <p>Cek Ketersediaan Kamar</p>
             </Link>
+
+            <button
+              onClick={() => router.post("/logout")}
+              className="flex items-center gap-3 cursor-pointer hover:text-yellow-300 transition-colors"
+            >
+              <LogOutIcon size={24} />
+              <p>Logout</p>
+            </button>
+
           </div>
         </motion.div>
       )}

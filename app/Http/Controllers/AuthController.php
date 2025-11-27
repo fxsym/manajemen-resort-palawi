@@ -31,4 +31,15 @@ class AuthController extends Controller
             'message' => $loginField . ' atau password yang anda masukan salah.',
         ])->onlyInput('message');
     }
+
+    public function logout(Request $request)
+    {
+        Auth::logout();
+
+        // invalidate session
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/login');
+    }
 }
