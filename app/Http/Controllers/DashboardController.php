@@ -33,7 +33,7 @@ public function getRevenueThisMonth()
     $endOfMonth = Carbon::now()->endOfMonth();
 
     $revenue = Order::whereBetween('check_in', [$startOfMonth, $endOfMonth])
-        ->sum('price');
+        ->sum('total_price');
 
     // Format ke Rupiah
     return 'Rp ' . number_format($revenue, 0, ',', '.');
