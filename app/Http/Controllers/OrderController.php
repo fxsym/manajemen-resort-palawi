@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class OrderController extends Controller
@@ -174,7 +175,6 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
-        // 🧩 Validasi data input sesuai struktur tabel `orders`
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'institution' => 'required|string|max:255',
@@ -182,7 +182,8 @@ class OrderController extends Controller
             'participants_count' => 'required|integer|min:1',
             'address' => 'required|string',
             'phone_number' => 'required|string|max:15',
-            'price' => 'required|numeric|min:0',
+            'total_price' => 'required|numeric|min:0',
+            'payment_amount' => 'required|numeric|min:0',
             'check_in' => 'required|date|after_or_equal:today',
             'check_out' => 'required|date|after:check_in',
             'chooseResorts' => 'required|array|min:1',
@@ -191,15 +192,42 @@ class OrderController extends Controller
             'chooseRooms.*' => 'exists:rooms,id',
         ]);
 
-        // 🧠 Hitung otomatis jumlah hari (days_count)
+        // Hitung jumlah hari dan kamar
         $checkIn = Carbon::parse($validated['check_in']);
         $checkOut = Carbon::parse($validated['check_out']);
-        $daysCount = max(1, $checkOut->diffInDays($checkIn)); // minimal 1 hari
+
+        // ✅ FIX: Balik urutan parameter - checkout DULU, baru checkin
+        $daysCount = $checkIn->diffInDays($checkOut);
+
+        // ATAU gunakan cara yang lebih aman dengan abs()
+        // $daysCount = abs($checkOut->diffInDays($checkIn));
+
+        // ATAU cara paling eksplisit:
+        // $daysCount = $checkIn->diffInDays($checkOut, false); // false = bisa negatif
+        // if ($daysCount < 0) {
+        //     $daysCount = abs($daysCount);
+        // }
+
         $roomsCount = count($validated['chooseRooms']);
+
+        // Tentukan payment_status
+        $paymentAmount = $validated['payment_amount'];
+        $totalPrice = $validated['total_price'];
+
+        if ($paymentAmount == 0) {
+            $paymentStatus = 'unpaid';
+        } elseif ($paymentAmount >= $totalPrice) {
+            $paymentStatus = 'paid';
+        } else {
+            $paymentStatus = 'down_payment';
+        }
+
+        // Tentukan status order
+        $status = ($paymentStatus === 'unpaid') ? 'pending' : 'reserved';
 
         DB::beginTransaction();
         try {
-            // 💾 Simpan ke tabel `orders`
+            // Simpan order
             $orderId = DB::table('orders')->insertGetId([
                 'name' => $validated['name'],
                 'institution' => $validated['institution'],
@@ -209,36 +237,49 @@ class OrderController extends Controller
                 'phone_number' => $validated['phone_number'],
                 'user_id' => Auth::id(),
                 'rooms_count' => $roomsCount,
-                'price' => $validated['price'],
+                'total_price' => $totalPrice,
+                'payment_amount' => $paymentAmount,
                 'days_count' => $daysCount,
                 'check_in' => $validated['check_in'],
                 'check_out' => $validated['check_out'],
+                'payment_status' => $paymentStatus,
+                'status' => $status,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
-            // 🏡 Simpan relasi resort ke `order_resort`
-            foreach ($validated['chooseResorts'] as $resortId) {
-                DB::table('order_resort')->insert([
-                    'order_id' => $orderId,
-                    'resort_id' => $resortId,
-                ]);
-            }
+            // Simpan relasi resorts
+            $resortData = array_map(fn($resortId) => [
+                'order_id' => $orderId,
+                'resort_id' => $resortId,
+            ], $validated['chooseResorts']);
+            DB::table('order_resort')->insert($resortData);
 
-            // 🛏️ Simpan relasi kamar ke `order_room` dan ubah statusnya jadi 'booked'
-            foreach ($validated['chooseRooms'] as $roomId) {
-                DB::table('order_room')->insert([
-                    'order_id' => $orderId,
-                    'room_id' => $roomId,
-                ]);
-            }
+            // Simpan relasi rooms
+            $roomData = array_map(fn($roomId) => [
+                'order_id' => $orderId,
+                'room_id' => $roomId,
+            ], $validated['chooseRooms']);
+            DB::table('order_room')->insert($roomData);
 
             DB::commit();
 
             return redirect()->back()->with('success', 'Booking berhasil dibuat!');
         } catch (\Throwable $e) {
             DB::rollBack();
-            return back()->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage()]);
+
+            // Tampilkan error lengkap di terminal Laravel
+            info("❌ Order creation failed");
+            info($e->getMessage());
+            info($e->getTraceAsString());
+
+            // Untuk menampilkan juga di Laravel log file
+            Log::error('Order creation failed', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTrace(),
+            ]);
+
+            return back()->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data.']);
         }
     }
 

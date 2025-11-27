@@ -1,6 +1,7 @@
 import { useForm, router } from "@inertiajs/react";
 import MainLayout from "../../components/layouts/MainLayout";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import NightsInfo from "../../components/ui/NightsInfo";
 
 export default function Create({ resorts }) {
   const { data, setData, post, processing, errors, setError, clearErrors, reset } =
@@ -8,12 +9,11 @@ export default function Create({ resorts }) {
       name: "",
       institution: "",
       position: "",
-      participants_count: "",
+      participants_count: "",  // ubah ke string kosong jika ingin konsisten
       address: "",
       phone_number: "",
-      rooms_count: "",
-      price: "",
-      days_count: "",
+      total_price: "",         // ubah ke string kosong jika ingin konsisten
+      payment_amount: "",      // ✅ TAMBAHKAN INI
       check_in: "",
       check_out: "",
       chooseResorts: [],
@@ -24,6 +24,33 @@ export default function Create({ resorts }) {
   const [loadingAvailability, setLoadingAvailability] = useState(false);
   const [nullDate, setNullDate] = useState();
   const [successMessage, setSuccessMessage] = useState("");
+
+  // Buat fungsi recalculate dengan useCallback
+  const recalculateTotal = useCallback(() => {
+    if (!data.check_in || !data.check_out || data.chooseRooms.length === 0 || choosedResorts.length === 0) {
+      return;
+    }
+
+    const allRooms = choosedResorts.flatMap(resort => resort.rooms);
+    const selectedRooms = allRooms.filter(room => data.chooseRooms.includes(room.id));
+    const totalRooms = selectedRooms.reduce((sum, r) => sum + r.price, 0);
+
+    const checkin = new Date(data.check_in);
+    const checkout = new Date(data.check_out);
+    const days = Math.max(1, (checkout - checkin) / (1000 * 60 * 60 * 24));
+
+    const finalTotal = totalRooms * days;
+
+    // Hanya update jika nilai berubah
+    if (data.total_price !== finalTotal) {
+      setData("total_price", finalTotal);
+    }
+  }, [data.check_in, data.check_out, data.chooseRooms, data.total_price, choosedResorts, setData]);
+
+  // useEffect tanpa data di dependency
+  useEffect(() => {
+    recalculateTotal();
+  }, [recalculateTotal]);
 
   // Fungsi untuk mendapatkan styling berdasarkan status
   const getRoomStatusStyle = (status, isSelected) => {
@@ -118,6 +145,17 @@ export default function Create({ resorts }) {
     );
   };
 
+  const calculateNights = () => {
+    if (!data.check_in || !data.check_out) return 0;
+    const start = new Date(data.check_in);
+    const end = new Date(data.check_out);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const nights = calculateNights();
+
   return (
     <MainLayout>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12">
@@ -198,11 +236,10 @@ export default function Create({ resorts }) {
                   <label
                     key={id}
                     htmlFor={`resort-${id}`}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 cursor-pointer transition-all ${
-                      data.chooseResorts.includes(id)
-                        ? "bg-[#1E828F] text-white border-[#1E828F]"
-                        : "bg-white border-gray-300 hover:bg-gray-50"
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 cursor-pointer transition-all ${data.chooseResorts.includes(id)
+                      ? "bg-[#1E828F] text-white border-[#1E828F]"
+                      : "bg-white border-gray-300 hover:bg-gray-50"
+                      }`}
                   >
                     <input
                       type="checkbox"
@@ -244,9 +281,8 @@ export default function Create({ resorts }) {
               <button
                 type="button"
                 onClick={handleCheckAvailability}
-                className={`bg-[#1E828F] text-white font-semibold py-3 px-8 rounded-xl shadow-md hover:bg-[#176672] transition-all transform hover:scale-105 ${
-                  loadingAvailability ? "opacity-60 cursor-not-allowed" : ""
-                }`}
+                className={`bg-[#1E828F] text-white font-semibold py-3 px-8 rounded-xl shadow-md hover:bg-[#176672] transition-all transform hover:scale-105 ${loadingAvailability ? "opacity-60 cursor-not-allowed" : ""
+                  }`}
               >
                 {loadingAvailability ? "Memeriksa..." : "Cek Ketersediaan Kamar"}
               </button>
@@ -255,6 +291,9 @@ export default function Create({ resorts }) {
             {/* Hasil Resort & Form Pemesan */}
             {choosedResorts.length > 0 && (
               <div className="space-y-10">
+                {nights > 0 && (
+                  <NightsInfo nights={nights} />
+                )}
                 {/* Legend Keterangan Warna */}
                 <div className="bg-white rounded-xl shadow-md p-4 border border-gray-200">
                   <h4 className="font-semibold text-gray-700 mb-3">Keterangan Status Kamar:</h4>
@@ -288,14 +327,13 @@ export default function Create({ resorts }) {
                         {rooms.map(({ id: roomId, name: roomName, availability_status }) => {
                           const selectable = isRoomSelectable(availability_status);
                           const isSelected = data.chooseRooms.includes(roomId);
-                          
+
                           return (
                             <label
                               key={roomId}
                               htmlFor={selectable ? `room-${roomId}` : undefined}
-                              className={`p-4 rounded-xl text-center font-semibold shadow-md border-2 transition-all ${
-                                getRoomStatusStyle(availability_status, isSelected)
-                              } ${selectable ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                              className={`p-4 rounded-xl text-center font-semibold shadow-md border-2 transition-all ${getRoomStatusStyle(availability_status, isSelected)
+                                } ${selectable ? 'cursor-pointer' : 'cursor-not-allowed'}`}
                               title={!selectable ? 'Kamar ini tidak tersedia' : 'Klik untuk memilih'}
                             >
                               <input
@@ -306,22 +344,32 @@ export default function Create({ resorts }) {
                                 disabled={!selectable}
                                 onChange={(e) => {
                                   if (!selectable) return;
-                                  
+
                                   const value = parseInt(e.target.value);
+                                  let updatedRooms = [];
+
                                   if (e.target.checked) {
-                                    setData("chooseRooms", [
-                                      ...data.chooseRooms,
-                                      value,
-                                    ]);
+                                    updatedRooms = [...data.chooseRooms, value];
                                   } else {
-                                    setData(
-                                      "chooseRooms",
-                                      data.chooseRooms.filter(
-                                        (rid) => rid !== value
-                                      )
-                                    );
+                                    updatedRooms = data.chooseRooms.filter((rid) => rid !== value);
                                   }
+
+                                  setData("chooseRooms", updatedRooms);
                                   clearErrors("chooseRooms");
+
+                                  // Ambil harga kamar yang terpilih
+                                  const selectedRooms = rooms.filter((r) => updatedRooms.includes(r.id));
+                                  const totalRooms = selectedRooms.reduce((sum, r) => sum + r.price, 0);
+
+                                  // Hitung beda hari
+                                  const checkin = new Date(data.check_in);
+                                  const checkout = new Date(data.check_out);
+                                  const days = (checkout - checkin) / (1000 * 60 * 60 * 24);
+
+                                  // Kalau jumlah hari < 1 (masih belum pilih tanggal checkout), pakai 1 hari
+                                  const total = totalRooms * (days > 0 ? days : 1);
+
+                                  setData("total_price", total);
                                 }}
                                 className="hidden"
                               />
@@ -357,7 +405,7 @@ export default function Create({ resorts }) {
                   <div className="grid md:grid-cols-2 gap-6">
                     {/* Kiri */}
                     <div className="space-y-4">
-                      {[ 
+                      {[
                         { id: "name", label: "Nama Pemesan" },
                         { id: "phone_number", label: "Nomor Telepon" },
                         { id: "institution", label: "Institusi Pemesan" },
@@ -385,33 +433,24 @@ export default function Create({ resorts }) {
 
                     {/* Kanan */}
                     <div className="space-y-4">
-                      {[ 
-                        { id: "address", label: "Alamat"},
+                      {[
+                        { id: "address", label: "Alamat" },
                         { id: "participants_count", label: "Jumlah Peserta" },
-                        { id: "total_price", label: "Harga" },
-                        { id: "payment_amount", label: "Total pembayaran" },
+                        { id: "total_price", label: "Total Harga" },
+                        { id: "payment_amount", label: "Total Dibayar" },
                       ].map(({ id, label, type }) => (
                         <div key={id}>
                           <label className="block font-medium mb-1">
                             {label}
                           </label>
-                          {type === "textarea" ? (
-                            <textarea
-                              id={id}
-                              rows={4}
-                              value={data[id]}
-                              onChange={(e) => setData(id, e.target.value)}
-                              className="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-[#1E828F] focus:ring-2 focus:ring-[#1E828F]/30 transition-all resize-none"
-                            />
-                          ) : (
-                            <input
-                              id={id}
-                              type="number"
-                              value={data[id]}
-                              onChange={(e) => setData(id, e.target.value)}
-                              className="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-[#1E828F] focus:ring-2 focus:ring-[#1E828F]/30 transition-all"
-                            />
-                          )}
+
+                          <input
+                            id={id}
+                            value={data[id]}
+                            onChange={(e) => setData(id, e.target.value)}
+                            className="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-[#1E828F] focus:ring-2 focus:ring-[#1E828F]/30 transition-all"
+                          />
+
                           {errors[id] && (
                             <p className="text-red-500 text-sm mt-1">
                               {errors[id]}
