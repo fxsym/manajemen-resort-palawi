@@ -386,9 +386,10 @@ export default function Create({ resorts }) {
                     {/* Kanan */}
                     <div className="space-y-4">
                       {[ 
-                        { id: "address", label: "Alamat", type: "textarea" },
+                        { id: "address", label: "Alamat"},
                         { id: "participants_count", label: "Jumlah Peserta" },
-                        { id: "price", label: "Harga" },
+                        { id: "total_price", label: "Harga" },
+                        { id: "payment_amount", label: "Total pembayaran" },
                       ].map(({ id, label, type }) => (
                         <div key={id}>
                           <label className="block font-medium mb-1">

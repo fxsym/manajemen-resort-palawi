@@ -14,6 +14,9 @@ return new class extends Migration
         Schema::create('rooms', function (Blueprint $table) {
             $table->id();
             $table->string('name', '100');
+            $table->string('type', '100');
+            $table->unsignedBigInteger('price');
+            $table->text('image_url')->nullable();
             $table->foreignId('resort_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
         });
