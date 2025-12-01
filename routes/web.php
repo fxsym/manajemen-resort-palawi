@@ -28,6 +28,14 @@ Route::post('/orders', [OrderController::class, 'store'])->middleware('auth');
 Route::get('/check-availability', [RoomController::class, 'showCheckAvailability'])->name('availability.show')->middleware('auth');
 Route::post('/check-availability', [RoomController::class, 'checkAvailability'])->name('availability.check')->middleware('auth');
 
+Route::get('/orders', [OrderController::class, 'index'])->middleware('auth');
 Route::post('/orders/create', [OrderController::class, 'checkAvailability'])->middleware('auth');
 
 Route::get('/room/{id}', [RoomController::class, 'show'])->name('room.show');
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::post('/orders/search-by-name-date', [OrderController::class, 'getOrdersByNameAndCheckinCheckoutDate'])->name('orders.search.name-date');
+    Route::post('/orders/search-by-month', [OrderController::class, 'getOrdersByMonth'])->name('orders.search.month');
+    Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
+});

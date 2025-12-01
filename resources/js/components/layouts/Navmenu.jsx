@@ -1,8 +1,10 @@
 import { Link, router } from "@inertiajs/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LogOutIcon } from "lucide-react";
+import { CgNotes } from "react-icons/cg";
+import { FaHotel } from "react-icons/fa";
 import { IoClose } from "react-icons/io5";
-import { MdOutlineLibraryBooks, MdRoomService } from "react-icons/md";
+import { MdHotel, MdOutlineLibraryBooks, MdRoomService } from "react-icons/md";
 import { TbLayoutDashboard } from "react-icons/tb";
 
 export default function Navmenu({ isOpen, onClose }) {
@@ -41,7 +43,7 @@ export default function Navmenu({ isOpen, onClose }) {
               href="/orders/create"
               className="flex items-center gap-3 cursor-pointer hover:text-yellow-300 transition-colors"
             >
-              <MdOutlineLibraryBooks size={24} />
+              <FaHotel size={24} />
               <p>Booking Resort</p>
             </Link>
 
@@ -49,8 +51,16 @@ export default function Navmenu({ isOpen, onClose }) {
               href="/check-availability"
               className="flex items-center gap-3 cursor-pointer hover:text-yellow-300 transition-colors"
             >
-              <MdRoomService size={24} />
+              <MdHotel size={24} />
               <p>Cek Ketersediaan Kamar</p>
+            </Link>
+
+            <Link
+              href="/orders"
+              className="flex items-center gap-3 cursor-pointer hover:text-yellow-300 transition-colors"
+            >
+              <CgNotes size={24} />
+              <p>Kelola Booking Resort</p>
             </Link>
 
             <button

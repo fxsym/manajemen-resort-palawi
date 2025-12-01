@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use App\Models\Resort;
 use App\Models\Room;
 use Carbon\Carbon;
@@ -18,7 +19,7 @@ class OrderController extends Controller
      */
     public function index()
     {
-        //
+        return Inertia::render('Order/Index');
     }
 
     /**
@@ -32,54 +33,6 @@ class OrderController extends Controller
             'resorts' => $resorts
         ]);
     }
-
-    // public function checkAvailability(Request $request)
-    // {
-    //     // 1️⃣ Validasi input
-    //     $validated = $request->validate([
-    //         'check_in' => 'required|date',
-    //         'check_out' => 'required|date|after_or_equal:check_in',
-    //         'resort_ids' => 'required|array|min:1',
-    //     ]);
-
-    //     $checkIn = $validated['check_in'];
-    //     $checkOut = $validated['check_out'];
-    //     $resortIds = $validated['resort_ids'];
-
-    //     // 2️⃣ Ambil semua resort sesuai ID
-
-
-    //     // 3️⃣ Ambil semua room dari resort terpilih
-    //     $allRooms = Room::whereIn('resort_id', $resortIds)->get();
-
-    //     // 4️⃣ Cari room_id yang sedang digunakan di rentang waktu tsb
-    //     $occupiedRoomIds = DB::table('order_room')
-    //         ->join('orders', 'order_room.order_id', '=', 'orders.id')
-    //         ->whereIn('orders.status', ['pending', 'confirmed', 'checked_in'])
-    //         ->where(function ($query) use ($checkIn, $checkOut) {
-    //             $query->whereDate('orders.check_in', '<=', $checkOut)
-    //                 ->whereDate('orders.check_out', '>=', $checkIn);
-    //         })
-    //         ->pluck('order_room.room_id')
-    //         ->toArray();
-
-    //     // 5️⃣ Filter room yang tidak sedang digunakan
-    //     $availableRooms = $allRooms->whereNotIn('id', $occupiedRoomIds)->values();
-
-    //     $availableRoomIds = $availableRooms->pluck('id');
-    //     $choosedResorts = Resort::with(['rooms' => function ($query) use ($availableRoomIds) {
-    //         $query->whereIn('id', $availableRoomIds);
-    //     }])->whereIn('id', $resortIds)->get();
-
-    //     $resorts = Resort::with('rooms')->get();
-
-    //     // 6️⃣ Return ke Inertia
-    //     return Inertia::render('Order/Create', [
-    //         'resorts' => $resorts,
-    //         'choosedResorts' => $choosedResorts,
-    //         'availableRooms' => $availableRooms,
-    //     ]);
-    // }
 
     public function checkAvailability(Request $request)
     {
@@ -167,9 +120,6 @@ class OrderController extends Controller
         ]);
     }
 
-
-
-
     /**
      * Store a newly created resource in storage.
      */
@@ -198,15 +148,6 @@ class OrderController extends Controller
 
         // ✅ FIX: Balik urutan parameter - checkout DULU, baru checkin
         $daysCount = $checkIn->diffInDays($checkOut);
-
-        // ATAU gunakan cara yang lebih aman dengan abs()
-        // $daysCount = abs($checkOut->diffInDays($checkIn));
-
-        // ATAU cara paling eksplisit:
-        // $daysCount = $checkIn->diffInDays($checkOut, false); // false = bisa negatif
-        // if ($daysCount < 0) {
-        //     $daysCount = abs($daysCount);
-        // }
 
         $roomsCount = count($validated['chooseRooms']);
 
@@ -283,12 +224,61 @@ class OrderController extends Controller
         }
     }
 
+    public function getOrdersByNameAndCheckinCheckoutDate(Request $request)
+    {
+        $validated = $request->validate([
+            'check_in' => 'required|date',
+            'name' => 'required|string',
+        ]);
+
+        $checkIn = $validated['check_in'];
+        $name = $validated['name'];
+
+        $orders = Order::with(['user', 'rooms', 'resorts'])
+            ->where('name', 'LIKE', '%' . $name . '%')
+            ->whereDate('check_in', $checkIn)
+            ->orderBy('check_in', 'asc')
+            ->get();
+
+        return response()->json([
+            'message' => $orders->isEmpty() ? 'No orders found' : 'Orders retrieved successfully',
+            'data' => $orders
+        ], 200);
+    }
+
+    public function getOrdersByMonth(Request $request)
+    {
+        $validated = $request->validate([
+            'month' => 'required|date_format:Y-m',
+        ]);
+
+        $month = $validated['month'];
+
+        // Parse year and month
+        [$year, $monthNumber] = explode('-', $month);
+
+        $orders = Order::with(['user', 'rooms', 'resorts'])
+            ->whereYear('check_in', $year)
+            ->whereMonth('check_in', $monthNumber)
+            ->orderBy('check_in', 'asc')
+            ->get();
+
+        return response()->json([
+            'message' => $orders->isEmpty() ? 'No orders found' : 'Orders retrieved successfully',
+            'data' => $orders
+        ], 200);
+    }
+
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show($id)
     {
-        //
+        $order = Order::with(['user', 'rooms', 'resorts'])->findOrFail($id);
+
+        return inertia('Order/Show', [
+            'order' => $order
+        ]);
     }
 
     /**
