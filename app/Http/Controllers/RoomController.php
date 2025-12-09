@@ -33,9 +33,13 @@ class RoomController extends Controller
     //     $checkIn = $request->input('check_in');
     //     $checkOut = $request->input('check_out');
 
-    //     $bookedRoomIds = DB::table('order_room')
+    //     // Ambil semua room
+    //     $allRooms = Room::all();
+
+    //     // MERAH: reserved, checked_in
+    //     $unavailableRoomIds = DB::table('order_room')
     //         ->join('orders', 'order_room.order_id', '=', 'orders.id')
-    //         ->whereIn('orders.status', ['pending', 'confirmed', 'checked_in'])
+    //         ->whereIn('orders.status', ['reserved', 'checked_in'])
     //         ->where(function ($query) use ($checkIn, $checkOut) {
     //             $query->whereBetween('orders.check_in', [$checkIn, $checkOut])
     //                 ->orWhereBetween('orders.check_out', [$checkIn, $checkOut])
@@ -45,13 +49,102 @@ class RoomController extends Controller
     //                 });
     //         })
     //         ->pluck('order_room.room_id')
+    //         ->unique()
     //         ->toArray();
 
-    //     $availableRooms = Room::whereNotIn('id', $bookedRoomIds)->get();
+    //     // KUNING: pending
+    //     $pendingRoomIds = DB::table('order_room')
+    //         ->join('orders', 'order_room.order_id', '=', 'orders.id')
+    //         ->where('orders.status', 'pending')
+    //         ->where(function ($query) use ($checkIn, $checkOut) {
+    //             $query->whereBetween('orders.check_in', [$checkIn, $checkOut])
+    //                 ->orWhereBetween('orders.check_out', [$checkIn, $checkOut])
+    //                 ->orWhere(function ($sub) use ($checkIn, $checkOut) {
+    //                     $sub->where('orders.check_in', '<=', $checkIn)
+    //                         ->where('orders.check_out', '>=', $checkOut);
+    //                 });
+    //         })
+    //         ->pluck('order_room.room_id')
+    //         ->unique()
+    //         ->toArray();
+
+    //     // Kategorikan room
+    //     $categorizedRooms = $allRooms->map(function ($room) use ($unavailableRoomIds, $pendingRoomIds, $checkIn, $checkOut) {
+    //         $room->availability_status = 'available';
+    //         $room->order_details = []; // UBAH dari null ke array
+
+    //         if (in_array($room->id, $unavailableRoomIds)) {
+    //             $room->availability_status = 'unavailable';
+
+    //             // AMBIL SEMUA ORDERS yang overlap, bukan hanya satu
+    //             $orders = Order::whereIn('status', ['reserved', 'checked_in'])
+    //                 ->whereHas('rooms', function ($query) use ($room) {
+    //                     $query->where('rooms.id', $room->id);
+    //                 })
+    //                 ->where(function ($query) use ($checkIn, $checkOut) {
+    //                     $query->whereBetween('check_in', [$checkIn, $checkOut])
+    //                         ->orWhereBetween('check_out', [$checkIn, $checkOut])
+    //                         ->orWhere(function ($sub) use ($checkIn, $checkOut) {
+    //                             $sub->where('check_in', '<=', $checkIn)
+    //                                 ->where('check_out', '>=', $checkOut);
+    //                         });
+    //                 })
+    //                 ->with('user')
+    //                 ->orderBy('check_in', 'asc') // Urutkan berdasarkan check_in
+    //                 ->get(); // UBAH dari first() ke get()
+
+    //             $room->order_details = $orders;
+    //         } elseif (in_array($room->id, $pendingRoomIds)) {
+    //             $room->availability_status = 'pending';
+
+    //             // AMBIL SEMUA ORDERS pending yang overlap
+    //             $orders = Order::where('status', 'pending')
+    //                 ->whereHas('rooms', function ($query) use ($room) {
+    //                     $query->where('rooms.id', $room->id);
+    //                 })
+    //                 ->where(function ($query) use ($checkIn, $checkOut) {
+    //                     $query->whereBetween('check_in', [$checkIn, $checkOut])
+    //                         ->orWhereBetween('check_out', [$checkIn, $checkOut])
+    //                         ->orWhere(function ($sub) use ($checkIn, $checkOut) {
+    //                             $sub->where('check_in', '<=', $checkIn)
+    //                                 ->where('check_out', '>=', $checkOut);
+    //                         });
+    //                 })
+    //                 ->with('user')
+    //                 ->orderBy('check_in', 'asc')
+    //                 ->get(); // UBAH dari first() ke get()
+
+    //             $room->order_details = $orders;
+    //         }
+
+    //         return $room;
+    //     });
+
+    //     // Pastikan order_details ikut ter-attach ke rooms dalam resorts
+    //     $resorts = Resort::with('rooms')->get();
+    //     $resorts = $resorts->map(function ($resort) use ($categorizedRooms) {
+    //         $resort->rooms = $resort->rooms->map(function ($room) use ($categorizedRooms) {
+    //             $categorized = $categorizedRooms->firstWhere('id', $room->id);
+    //             if ($categorized) {
+    //                 $room->availability_status = $categorized->availability_status;
+    //                 $room->order_details = $categorized->order_details;
+    //             }
+    //             return $room;
+    //         });
+    //         return $resort;
+    //     });
+
+    //     $availableRoomIds = $allRooms
+    //         ->whereNotIn('id', $unavailableRoomIds)
+    //         ->whereNotIn('id', $pendingRoomIds)
+    //         ->pluck('id')
+    //         ->toArray();
+
+    //     $availableRooms = $categorizedRooms->whereIn('id', $availableRoomIds)->values();
 
     //     return Inertia::render('CheckAvailability', [
-    //         'resorts' => Resort::with('rooms')->get(),
-    //         'availableRooms' => $availableRooms
+    //         'resorts' => $resorts,
+    //         'availableRooms' => $availableRooms,
     //     ]);
     // }
 
@@ -63,10 +156,10 @@ class RoomController extends Controller
         // Ambil semua room
         $allRooms = Room::all();
 
-        // MERAH: reserved, checked_in
+        // MERAH: payment_status = 'paid' (Sudah bayar lunas)
         $unavailableRoomIds = DB::table('order_room')
             ->join('orders', 'order_room.order_id', '=', 'orders.id')
-            ->whereIn('orders.status', ['reserved', 'checked_in'])
+            ->where('orders.payment_status', 'paid')
             ->where(function ($query) use ($checkIn, $checkOut) {
                 $query->whereBetween('orders.check_in', [$checkIn, $checkOut])
                     ->orWhereBetween('orders.check_out', [$checkIn, $checkOut])
@@ -79,10 +172,10 @@ class RoomController extends Controller
             ->unique()
             ->toArray();
 
-        // KUNING: pending
+        // KUNING: payment_status = 'unpaid' atau 'down_payment'
         $pendingRoomIds = DB::table('order_room')
             ->join('orders', 'order_room.order_id', '=', 'orders.id')
-            ->where('orders.status', 'pending')
+            ->whereIn('orders.payment_status', ['unpaid', 'down_payment'])
             ->where(function ($query) use ($checkIn, $checkOut) {
                 $query->whereBetween('orders.check_in', [$checkIn, $checkOut])
                     ->orWhereBetween('orders.check_out', [$checkIn, $checkOut])
@@ -98,34 +191,13 @@ class RoomController extends Controller
         // Kategorikan room
         $categorizedRooms = $allRooms->map(function ($room) use ($unavailableRoomIds, $pendingRoomIds, $checkIn, $checkOut) {
             $room->availability_status = 'available';
-            $room->order_details = []; // UBAH dari null ke array
+            $room->order_details = [];
 
             if (in_array($room->id, $unavailableRoomIds)) {
                 $room->availability_status = 'unavailable';
 
-                // AMBIL SEMUA ORDERS yang overlap, bukan hanya satu
-                $orders = Order::whereIn('status', ['reserved', 'checked_in'])
-                    ->whereHas('rooms', function ($query) use ($room) {
-                        $query->where('rooms.id', $room->id);
-                    })
-                    ->where(function ($query) use ($checkIn, $checkOut) {
-                        $query->whereBetween('check_in', [$checkIn, $checkOut])
-                            ->orWhereBetween('check_out', [$checkIn, $checkOut])
-                            ->orWhere(function ($sub) use ($checkIn, $checkOut) {
-                                $sub->where('check_in', '<=', $checkIn)
-                                    ->where('check_out', '>=', $checkOut);
-                            });
-                    })
-                    ->with('user')
-                    ->orderBy('check_in', 'asc') // Urutkan berdasarkan check_in
-                    ->get(); // UBAH dari first() ke get()
-
-                $room->order_details = $orders;
-            } elseif (in_array($room->id, $pendingRoomIds)) {
-                $room->availability_status = 'pending';
-
-                // AMBIL SEMUA ORDERS pending yang overlap
-                $orders = Order::where('status', 'pending')
+                // AMBIL SEMUA ORDERS dengan payment_status = 'paid' yang overlap
+                $orders = Order::where('payment_status', 'paid')
                     ->whereHas('rooms', function ($query) use ($room) {
                         $query->where('rooms.id', $room->id);
                     })
@@ -139,7 +211,28 @@ class RoomController extends Controller
                     })
                     ->with('user')
                     ->orderBy('check_in', 'asc')
-                    ->get(); // UBAH dari first() ke get()
+                    ->get();
+
+                $room->order_details = $orders;
+            } elseif (in_array($room->id, $pendingRoomIds)) {
+                $room->availability_status = 'pending';
+
+                // AMBIL SEMUA ORDERS dengan payment_status = 'unpaid' atau 'down_payment' yang overlap
+                $orders = Order::whereIn('payment_status', ['unpaid', 'down_payment'])
+                    ->whereHas('rooms', function ($query) use ($room) {
+                        $query->where('rooms.id', $room->id);
+                    })
+                    ->where(function ($query) use ($checkIn, $checkOut) {
+                        $query->whereBetween('check_in', [$checkIn, $checkOut])
+                            ->orWhereBetween('check_out', [$checkIn, $checkOut])
+                            ->orWhere(function ($sub) use ($checkIn, $checkOut) {
+                                $sub->where('check_in', '<=', $checkIn)
+                                    ->where('check_out', '>=', $checkOut);
+                            });
+                    })
+                    ->with('user')
+                    ->orderBy('check_in', 'asc')
+                    ->get();
 
                 $room->order_details = $orders;
             }
