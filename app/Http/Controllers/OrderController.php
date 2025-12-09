@@ -286,15 +286,143 @@ class OrderController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        $order = DB::table('orders')
+            ->where('id', $id)
+            ->first();
+
+        if (!$order) {
+            return redirect('/orders')->with('error', 'Order tidak ditemukan');
+        }
+
+        // Ambil relasi resorts
+        $orderResorts = DB::table('order_resort')
+            ->where('order_id', $id)
+            ->pluck('resort_id')
+            ->toArray();
+
+        // Ambil relasi rooms
+        $orderRooms = DB::table('order_room')
+            ->where('order_id', $id)
+            ->pluck('room_id')
+            ->toArray();
+
+        // Ambil semua resorts dan rooms untuk dropdown
+        $allResorts = DB::table('resorts')->get();
+        $allRooms = DB::table('rooms')->get();
+
+        return Inertia::render('Order/Edit', [
+            'order' => $order,
+            'selectedResorts' => $orderResorts,
+            'selectedRooms' => $orderRooms,
+            'allResorts' => $allResorts,
+            'allRooms' => $allRooms,
+        ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
-        //
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'institution' => 'required|string|max:255',
+            'position' => 'nullable|string|max:255',
+            'participants_count' => 'required|integer|min:1',
+            'address' => 'required|string',
+            'phone_number' => 'required|string|max:15',
+            'total_price' => 'required|numeric|min:0',
+            'payment_amount' => 'required|numeric|min:0',
+            // ✅ FIX: Hapus after_or_equal:today untuk edit
+            'check_in' => 'required|date',
+            'check_out' => 'required|date|after:check_in',
+            'payment_status' => 'required|in:unpaid,down_payment,paid', // ✅ Tambahkan validasi
+            'status' => 'required|in:pending,reserved,checked_in,checked_out,cancelled,completed', // ✅ Tambahkan validasi
+            'chooseResorts' => 'required|array|min:1',
+            'chooseResorts.*' => 'exists:resorts,id',
+            'chooseRooms' => 'required|array|min:1',
+            'chooseRooms.*' => 'exists:rooms,id',
+        ]);
+
+        $checkIn = Carbon::parse($validated['check_in']);
+        $checkOut = Carbon::parse($validated['check_out']);
+        $daysCount = $checkIn->diffInDays($checkOut);
+        $roomsCount = count($validated['chooseRooms']);
+
+        // ✅ FIX: Gunakan status dari form, bukan override
+        $paymentStatus = $validated['payment_status'];
+        $status = $validated['status'];
+
+        // Debug data yang masuk
+        Log::info('Update Order Debug', [
+            'order_id' => $id,
+            'validated' => $validated,
+            'days_count' => $daysCount,
+            'rooms_count' => $roomsCount,
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Update data order utama
+            DB::table('orders')->where('id', $id)->update([
+                'name' => $validated['name'],
+                'institution' => $validated['institution'],
+                'position' => $validated['position'],
+                'participants_count' => $validated['participants_count'],
+                'address' => $validated['address'],
+                'phone_number' => $validated['phone_number'],
+                'rooms_count' => $roomsCount,
+                'total_price' => $validated['total_price'],
+                'payment_amount' => $validated['payment_amount'],
+                'days_count' => $daysCount,
+                'check_in' => $validated['check_in'],
+                'check_out' => $validated['check_out'],
+                'payment_status' => $paymentStatus,
+                'status' => $status,
+                'updated_at' => now(),
+            ]);
+
+            // Hapus relasi sebelumnya lalu insert ulang
+            DB::table('order_resort')->where('order_id', $id)->delete();
+            DB::table('order_room')->where('order_id', $id)->delete();
+
+            // ✅ FIX: Tambahkan timestamps di pivot tables
+            $resortData = array_map(fn($resortId) => [
+                'order_id' => $id,
+                'resort_id' => $resortId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ], $validated['chooseResorts']);
+            DB::table('order_resort')->insert($resortData);
+
+            $roomData = array_map(fn($roomId) => [
+                'order_id' => $id,
+                'room_id' => $roomId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ], $validated['chooseRooms']);
+            DB::table('order_room')->insert($roomData);
+
+            DB::commit();
+
+            // ✅ FIX: Redirect ke detail order, bukan back
+            return redirect()->route('orders.show', $id)->with('success', 'Order berhasil diperbarui!');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            // Tampilkan error lengkap
+            info("❌ Order update failed");
+            info($e->getMessage());
+            info($e->getTraceAsString());
+
+            Log::error('Order update failed', [
+                'order_id' => $id,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTrace(),
+            ]);
+
+            return back()->withErrors(['error' => 'Terjadi kesalahan saat mengupdate data: ' . $e->getMessage()]);
+        }
     }
 
     /**

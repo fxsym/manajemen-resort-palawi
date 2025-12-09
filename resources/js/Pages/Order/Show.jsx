@@ -1,5 +1,5 @@
 import { router } from "@inertiajs/react"
-import { ArrowLeft, User, Building2, MapPin, Phone, Calendar, Users, Bed, CreditCard, CheckCircle, Clock } from "lucide-react"
+import { ArrowLeft, User, Building2, MapPin, Phone, Calendar, Users, Bed, CreditCard, CheckCircle, Clock, Edit } from "lucide-react"
 import MainLayout from "../../components/layouts/MainLayout"
 
 // Mock order data - Replace with actual props from Inertia
@@ -37,9 +37,9 @@ const mockOrder = {
 }
 
 export default function Show({ order = mockOrder }) {
-    const handleBack = () => {
-        router.visit('/orders')
-    }
+    const handleBack = () => router.get('/orders')
+    const handleEdit = () => router.get(`/orders/edit/${order.id}`)
+
 
     const getStatusBadge = (status) => {
         const statusConfig = {
@@ -87,19 +87,30 @@ export default function Show({ order = mockOrder }) {
     return (
         <MainLayout>
             <div className="max-w-5xl mx-auto space-y-6">
-                {/* Header with Back Button */}
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={handleBack}
-                        className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow hover:shadow-md transition-all border border-gray-200 hover:border-indigo-300"
-                    >
-                        <ArrowLeft className="w-5 h-5" />
-                        <span className="font-medium">Kembali</span>
-                    </button>
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Detail Booking</h1>
-                        <p className="text-gray-600">ID: #{order.id}</p>
+                {/* Header with Back Button and Edit Button */}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={handleBack}
+                            className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow hover:shadow-md transition-all border border-gray-200 hover:border-indigo-300"
+                        >
+                            <ArrowLeft className="w-5 h-5" />
+                            <span className="font-medium">Kembali</span>
+                        </button>
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900">Detail Booking</h1>
+                            <p className="text-gray-600">ID: #{order.id}</p>
+                        </div>
                     </div>
+
+                    {/* Edit Button */}
+                    <button
+                        onClick={handleEdit}
+                        className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg shadow hover:shadow-lg hover:bg-indigo-700 transition-all"
+                    >
+                        <Edit className="w-5 h-5" />
+                        <span className="font-medium">Edit Booking</span>
+                    </button>
                 </div>
 
                 {/* Status Cards */}
@@ -205,7 +216,7 @@ export default function Show({ order = mockOrder }) {
 
                         <div className="border-t border-gray-200 pt-8">
                             <h3 className="text-xl font-bold text-gray-900 mb-6">Detail Pemesanan</h3>
-                            
+
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div className="space-y-4">
                                     <div className="flex items-start gap-3">
@@ -264,7 +275,7 @@ export default function Show({ order = mockOrder }) {
                         {/* Payment Information */}
                         <div className="border-t border-gray-200 pt-8">
                             <h3 className="text-xl font-bold text-gray-900 mb-6">Informasi Pembayaran</h3>
-                            
+
                             <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 space-y-4">
                                 <div className="flex justify-between items-center">
                                     <span className="text-gray-700 font-medium">Total Harga</span>

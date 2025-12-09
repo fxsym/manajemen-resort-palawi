@@ -23,7 +23,10 @@ Route::get('/resorts', [ResortController::class, 'index'])->middleware('auth');
 Route::get('/resorts/{id}', [ResortController::class, 'show'])->middleware('auth');
 
 Route::get('/orders/create', [OrderController::class, 'create'])->middleware('auth');
+Route::get('/orders/edit/{id}', [OrderController::class, 'edit'])->middleware('auth');
 Route::post('/orders', [OrderController::class, 'store'])->middleware('auth');
+Route::patch('/orders/{id}', [OrderController::class, 'update'])->middleware('auth');
+Route::delete('/orders/{id}', [OrderController::class, 'destroy'])->middleware('auth');
 
 Route::get('/check-availability', [RoomController::class, 'showCheckAvailability'])->name('availability.show')->middleware('auth');
 Route::post('/check-availability', [RoomController::class, 'checkAvailability'])->name('availability.check')->middleware('auth');
