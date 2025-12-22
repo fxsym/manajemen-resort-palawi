@@ -23,7 +23,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Inertia::share([
             'auth.user' => fn() => Auth::check()
-                ? Auth::user()->only('id', 'name', 'email', 'image_url') // hanya field penting
+                ? Auth::user()->only('id', 'name', 'email', 'image_url', 'role') // hanya field penting
                 : null,
         ]);
     }
